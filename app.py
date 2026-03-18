@@ -6,7 +6,8 @@ from routes.cascade import cascade_bp
 from db import init_db
 
 app = Flask(__name__)
-CORS(app)
+
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 init_db()
 
