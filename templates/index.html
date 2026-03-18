@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MediQueue — Smart Queue Management</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Playfair+Display:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --teal: #028090; --teal-light: #E1F5EE; --teal-dark: #04342C;
+    --teal-mid: #1D9E75; --teal-border: #0F6E56;
+    --cream: #FAFAF8; --charcoal: #1C1C1C; --muted: #6B7280;
+    --border: #E5E7EB; --white: #ffffff;
+    --danger: #E24B4A; --amber: #BA7517; --amber-light: #FAEEDA;
+    --success: #1D9E75; --success-light: #E1F5EEe;
+    --radius: 14px; --radius-sm: 8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--charcoal); }
+
+  nav { background: var(--white); border-bottom: 1px solid var(--border); padding: 0 2rem; display: flex; align-items: center; justify-content: space-between; height: 60px; position: sticky; top: 0; z-index: 100; }
+  .logo { font-family: 'Playfair Display', serif; font-size: 1.4rem; color: var(--teal); }
+  .logo span { color: var(--charcoal); }
+  .nav-tabs { display: flex; gap: 4px; }
+  .nav-tab { padding: 6px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 500; cursor: pointer; border: none; background: transparent; color: var(--muted); transition: all 0.2s; }
+  .nav-tab.active { background: var(--teal); color: white; }
+  .nav-tab:hover:not(.active) { background: var(--teal-light); color: var(--teal); }
+
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* ── PATIENT ── */
+  .patient-wrapper { display: grid; grid-template-columns: 340px 1fr; min-height: calc(100vh - 60px); }
+  .phone-panel { background: var(--white); border-right: 1px solid var(--border); padding: 2rem 1.5rem; display: flex; flex-direction: column; align-items: center; gap: 1.5rem; }
+  .phone-frame { width: 300px; background: var(--charcoal); border-radius: 36px; padding: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.25); }
+  .phone-notch { width: 100px; height: 28px; background: var(--charcoal); border-radius: 0 0 18px 18px; margin: 0 auto 8px; }
+  .phone-screen { background: var(--cream); border-radius: 26px; overflow: hidden; min-height: 560px; }
+  .step-indicator { display: flex; gap: 6px; justify-content: center; }
+  .step-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); transition: all 0.3s; }
+  .step-dot.active { background: var(--teal); width: 24px; border-radius: 4px; }
+  .step-dot.done { background: var(--teal-mid); }
+
+  .screen { display: none; padding: 1.5rem 1.2rem; min-height: 560px; flex-direction: column; }
+  .screen.active { display: flex; }
+  .app-header { background: var(--teal); color: white; padding: 1rem 1.2rem; border-radius: 0 0 20px 20px; margin: -1.5rem -1.2rem 1.2rem; }
+  .app-header h2 { font-family: 'Playfair Display', serif; font-size: 1.15rem; }
+  .app-header p { font-size: 0.75rem; opacity: 0.8; margin-top: 2px; }
+  .screen-header { margin-bottom: 1rem; }
+  .screen-header h3 { font-size: 1rem; font-weight: 600; }
+  .screen-header p { font-size: 0.8rem; color: var(--muted); margin-top: 2px; }
+  .form-group { margin-bottom: 0.9rem; }
+  .form-group label { font-size: 0.72rem; font-weight: 500; color: var(--muted); display: block; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .form-group input, .form-group select { width: 100%; padding: 8px 12px; border: 1.5px solid var(--border); border-radius: var(--radius-sm); font-size: 0.85rem; font-family: 'DM Sans', sans-serif; background: var(--white); }
+  .form-group input:focus, .form-group select:focus { outline: none; border-color: var(--teal); }
+  .btn-primary { width: 100%; padding: 11px; background: var(--teal); color: white; border: none; border-radius: var(--radius-sm); font-size: 0.9rem; font-weight: 600; cursor: pointer; margin-top: auto; font-family: 'DM Sans', sans-serif; transition: all 0.2s; }
+  .btn-primary:hover { background: var(--teal-border); }
+  .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+  .confirm-detail { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 0.82rem; }
+  .confirm-detail:last-child { border: none; }
+  .confirm-detail span:first-child { color: var(--muted); }
+  .confirm-detail span:last-child { font-weight: 600; }
+  .queue-live { background: var(--teal); border-radius: 12px; padding: 1.2rem; color: white; text-align: center; margin: 0.8rem 0; }
+  .queue-number { font-size: 3rem; font-weight: 700; line-height: 1; }
+  .notif-card { background: var(--amber-light); border: 1.5px solid var(--amber); border-radius: 10px; padding: 12px; margin: 0.5rem 0; }
+  .notif-card h4 { font-size: 0.85rem; font-weight: 600; color: var(--amber); }
+  .notif-card p { font-size: 0.78rem; color: #92400e; margin-top: 3px; }
+  .alert { padding: 10px 12px; border-radius: 8px; font-size: 0.82rem; margin: 8px 0; }
+  .alert.error { background: #FEE2E2; color: var(--danger); border: 1px solid var(--danger); }
+  .alert.success { background: #D1FAE5; color: #065F46; border: 1px solid #10B981; }
+
+  /* ── DASHBOARD ── */
+  .dashboard { padding: 1.5rem 2rem; }
+  .dash-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
+  .stats-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 1rem; margin-bottom: 1.5rem; }
+  .stat-card { background: var(--white); border-radius: var(--radius); padding: 1.2rem; border: 1px solid var(--border); }
+  .stat-card.highlight { background: var(--teal); border-color: var(--teal); }
+  .stat-card .stat-label { font-size: 0.78rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  .stat-card.highlight .stat-label { color: rgba(255,255,255,0.8); }
+  .stat-card .stat-val { font-size: 2rem; font-weight: 700; margin-top: 4px; }
+  .stat-card.highlight .stat-val { color: white; }
+  .stat-card .stat-sub { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+  .stat-card.highlight .stat-sub { color: rgba(255,255,255,0.7); }
+  .panel { background: var(--white); border-radius: var(--radius); border: 1px solid var(--border); overflow: hidden; }
+  .panel-header { padding: 1rem 1.2rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .panel-header h3 { font-size: 0.95rem; font-weight: 600; }
+  .queue-row { display: grid; grid-template-columns: 40px 1fr 90px 100px; align-items: center; padding: 10px 1.2rem; gap: 12px; border-bottom: 1px solid var(--border); }
+  .queue-row.current { background: var(--teal-light); border-left: 3px solid var(--teal); }
+  .queue-row.missed-row { background: #fff5f5; }
+  .q-num { width: 32px; height: 32px; border-radius: 50%; background: var(--border); display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; }
+  .queue-row.current .q-num { background: var(--teal); color: white; }
+  .queue-row.missed-row .q-num { background: var(--danger); color: white; }
+  .q-name { font-size: 0.88rem; font-weight: 500; }
+  .q-reason { font-size: 0.75rem; color: var(--muted); }
+  .q-status { font-size: 0.72rem; padding: 3px 8px; border-radius: 20px; text-align: center; font-weight: 600; }
+  .q-status.booked { background: #EEF2FF; color: #3730A3; }
+  .q-status.present { background: #D1FAE5; color: #065F46; }
+  .q-status.missed { background: #FEE2E2; color: var(--danger); }
+  .btn-sm { padding: 5px 12px; border-radius: 6px; font-size: 0.78rem; font-weight: 600; cursor: pointer; border: none; font-family: 'DM Sans', sans-serif; transition: all 0.2s; }
+  .btn-sm.primary { background: var(--teal); color: white; }
+  .btn-sm.danger { background: var(--danger); color: white; }
+  .status-badge { padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; background: #D1FAE5; color: #065F46; }
+</style>
+</head>
+<body>
+
+<!-- Change this to your Render URL after deploying -->
+<script>
+  const API = "http://127.0.0.1:5000";
+</script>
+
+<nav>
+  <div class="logo">Medi<span>Queue</span></div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="switchView('patient')">Patient App</button>
+    <button class="nav-tab" onclick="switchView('hospital')">Hospital Dashboard</button>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════
+     PATIENT VIEW
+═══════════════════════════ -->
+<div class="view active" id="view-patient">
+  <div class="patient-wrapper">
+
+    <div class="phone-panel">
+      <div class="step-indicator" id="step-dots"></div>
+      <div class="phone-frame">
+        <div class="phone-notch"></div>
+        <div class="phone-screen">
+
+          <!-- Screen 1: Register -->
+          <div class="screen active" id="screen-1">
+            <div class="app-header"><h2>MediQueue</h2><p>Smart Queue Management</p></div>
+            <div class="screen-header"><h3>Create Profile</h3><p>Saved once, used every visit</p></div>
+            <div class="form-group"><label>Full Name</label><input id="p-name" type="text" placeholder="Your full name"/></div>
+            <div class="form-group"><label>Age</label><input id="p-age" type="number" placeholder="Age"/></div>
+            <div class="form-group"><label>Blood Group</label>
+              <select id="p-blood"><option>B+</option><option>A+</option><option>O+</option><option>AB+</option><option>A-</option><option>O-</option></select>
+            </div>
+            <div class="form-group"><label>Conditions</label><input id="p-conditions" type="text" placeholder="e.g. Hypertension"/></div>
+            <div class="form-group"><label>Phone</label><input id="p-phone" type="text" placeholder="10-digit mobile number"/></div>
+            <div id="reg-alert"></div>
+            <button class="btn-primary" id="reg-btn" onclick="registerPatient()">Save Profile →</button>
+          </div>
+
+          <!-- Screen 2: Book Slot -->
+          <div class="screen" id="screen-2">
+            <div class="app-header"><h2>Book a Slot</h2><p>Select hospital & time</p></div>
+            <div class="form-group"><label>Hospital</label>
+              <select id="b-hospital">
+                <option>Apollo Hospitals</option>
+                <option>Yashoda Hospitals</option>
+                <option>KIMS Hospital</option>
+                <option>Care Hospital</option>
+              </select>
+            </div>
+            <div class="form-group"><label>Doctor</label>
+              <select id="b-doctor">
+                <option>Dr. Priya Sharma</option>
+                <option>Dr. Ravi Kumar</option>
+                <option>Dr. Anita Reddy</option>
+              </select>
+            </div>
+            <div class="form-group"><label>Department</label>
+              <select>
+                <option>General Medicine</option>
+                <option>Cardiology</option>
+                <option>Orthopaedics</option>
+              </select>
+            </div>
+            <div class="form-group"><label>Slot Time</label>
+              <select id="b-time">
+                <option>10:00 AM</option><option>10:30 AM</option>
+                <option>11:00 AM</option><option>11:30 AM</option>
+                <option>12:00 PM</option><option>12:30 PM</option>
+              </select>
+            </div>
+            <div id="book-alert"></div>
+            <button class="btn-primary" id="book-btn" onclick="bookSlot()">Confirm Booking →</button>
+          </div>
+
+          <!-- Screen 3: QR Confirmation -->
+          <div class="screen" id="screen-3">
+            <div class="app-header"><h2>Booking Confirmed</h2><p>Show QR at reception</p></div>
+            <div style="text-align:center;margin:1rem 0">
+              <img id="qr-img" src="" alt="QR Code" style="width:140px;height:140px;border:2px solid var(--teal);border-radius:8px;padding:8px;background:white"/>
+            </div>
+            <div class="confirm-detail"><span>Booking ID</span><span id="conf-id">—</span></div>
+            <div class="confirm-detail"><span>Hospital</span><span id="conf-hospital">—</span></div>
+            <div class="confirm-detail"><span>Doctor</span><span id="conf-doctor">—</span></div>
+            <div class="confirm-detail"><span>Slot Time</span><span id="conf-time" style="color:var(--teal)">—</span></div>
+            <div class="confirm-detail"><span>Queue Position</span><span id="conf-pos">—</span></div>
+            <button class="btn-primary" onclick="gotoScreen(4)" style="margin-top:1rem">Track My Queue →</button>
+          </div>
+
+          <!-- Screen 4: Live Queue -->
+          <div class="screen" id="screen-4">
+            <div class="app-header"><h2>Live Queue</h2><p>Real-time position</p></div>
+            <div class="queue-live">
+              <div style="font-size:0.8rem;opacity:0.8">Your position</div>
+              <div class="queue-number" id="live-pos">—</div>
+              <div style="font-size:0.8rem;opacity:0.8;margin-top:4px">in queue</div>
+              <div style="font-size:0.85rem;margin-top:8px" id="live-eta">Loading...</div>
+            </div>
+            <div class="confirm-detail"><span>Slot time</span><span id="live-slot">—</span></div>
+            <div class="confirm-detail"><span>Total in queue</span><span id="live-total">—</span></div>
+            <div class="notif-card" style="margin-top:8px">
+              <h4>GPS alert ready</h4>
+              <p>We'll notify you when it's time to head to the hospital</p>
+            </div>
+            <button class="btn-primary" onclick="refreshQueue()" style="margin-top:auto;background:var(--teal-border)">Refresh Queue ↻</button>
+          </div>
+
+        </div>
+      </div>
+      <div style="display:flex;gap:12px;align-items:center">
+        <button onclick="prevScreen()" style="width:36px;height:36px;border-radius:50%;border:1.5px solid var(--border);background:white;cursor:pointer">←</button>
+        <span style="font-size:0.8rem;color:var(--muted)" id="screen-label">Step 1 of 4</span>
+        <button onclick="nextScreenNav()" style="width:36px;height:36px;border-radius:50%;border:1.5px solid var(--border);background:white;cursor:pointer">→</button>
+      </div>
+    </div>
+
+    <!-- Info Panel -->
+    <div style="padding:2rem">
+      <h2 style="font-size:1.3rem;font-weight:600;margin-bottom:0.5rem">How MediQueue Works</h2>
+      <p style="color:var(--muted);font-size:0.88rem;margin-bottom:1.5rem">Follow the steps on the phone to experience the full patient flow</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+        <div style="background:var(--white);border-radius:var(--radius);border:1px solid var(--border);padding:1.2rem">
+          <div style="font-size:1.5rem;margin-bottom:8px">1</div>
+          <div style="font-weight:600;font-size:0.9rem">Register once</div>
+          <div style="font-size:0.82rem;color:var(--muted);margin-top:4px">Your profile is saved and reused for every future visit</div>
+        </div>
+        <div style="background:var(--white);border-radius:var(--radius);border:1px solid var(--border);padding:1.2rem">
+          <div style="font-size:1.5rem;margin-bottom:8px">2</div>
+          <div style="font-weight:600;font-size:0.9rem">Book a slot</div>
+          <div style="font-size:0.82rem;color:var(--muted);margin-top:4px">Pick hospital, doctor and time — get instant QR confirmation</div>
+        </div>
+        <div style="background:var(--white);border-radius:var(--radius);border:1px solid var(--border);padding:1.2rem">
+          <div style="font-size:1.5rem;margin-bottom:8px">3</div>
+          <div style="font-weight:600;font-size:0.9rem">Track live queue</div>
+          <div style="font-size:0.82rem;color:var(--muted);margin-top:4px">See your real position — GPS alert tells you when to leave</div>
+        </div>
+        <div style="background:var(--teal-light);border-radius:var(--radius);border:1px solid var(--teal);padding:1.2rem">
+          <div style="font-size:1.5rem;margin-bottom:8px">4</div>
+          <div style="font-weight:600;font-size:0.9rem;color:var(--teal-dark)">GPS Cascade</div>
+          <div style="font-size:0.82rem;color:var(--teal-border);margin-top:4px">Missed slots auto-filled by nearest patient — zero chaos</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════
+     HOSPITAL VIEW
+═══════════════════════════ -->
+<div class="view" id="view-hospital">
+  <div class="dashboard">
+    <div class="dash-header">
+      <div>
+        <h2 style="font-size:1.3rem;font-weight:600">Apollo Hospitals — OPD Dashboard</h2>
+        <p style="font-size:0.85rem;color:var(--muted)">Dr. Priya Sharma · General Medicine · Live Queue</p>
+      </div>
+      <span class="status-badge">● Live</span>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-card highlight">
+        <div class="stat-label">In Queue</div>
+        <div class="stat-val" id="stat-total">—</div>
+        <div class="stat-sub">Active patients</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Booked</div>
+        <div class="stat-val" id="stat-booked">—</div>
+        <div class="stat-sub">Confirmed slots</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Present</div>
+        <div class="stat-val" id="stat-present">—</div>
+        <div class="stat-sub">Checked in</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Missed</div>
+        <div class="stat-val" id="stat-missed">—</div>
+        <div class="stat-sub">GPS cascade ready</div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 320px;gap:1.5rem">
+      <div class="panel">
+        <div class="panel-header">
+          <h3>Live Queue</h3>
+          <div style="display:flex;gap:8px">
+            <button class="btn-sm primary" onclick="loadQueue()">Refresh ↻</button>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:40px 1fr 90px 100px;padding:8px 1.2rem;font-size:0.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border)">
+          <div>#</div><div>Patient</div><div>Slot</div><div>Status</div>
+        </div>
+        <div id="queue-list">
+          <div style="padding:2rem;text-align:center;color:var(--muted);font-size:0.88rem">Loading queue...</div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:1.2rem">
+        <div class="panel">
+          <div class="panel-header"><h3>Quick Actions</h3></div>
+          <div style="padding:1.2rem;display:flex;flex-direction:column;gap:8px">
+            <div class="form-group" style="margin:0">
+              <label>Booking ID</label>
+              <input id="action-booking-id" type="text" placeholder="e.g. MQ-A3F2" style="width:100%;padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:0.85rem;font-family:'DM Sans',sans-serif"/>
+            </div>
+            <button class="btn-sm primary" style="width:100%;padding:8px" onclick="markPresent()">Mark as Present</button>
+            <button class="btn-sm" style="width:100%;padding:8px;background:#FEE2E2;color:var(--danger);border:none;border-radius:6px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif" onclick="triggerCascade()">Trigger GPS Cascade</button>
+            <button class="btn-sm" style="width:100%;padding:8px;background:#F3F4F6;color:var(--charcoal);border:none;border-radius:6px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif" onclick="markDone()">Mark as Done</button>
+            <div id="action-result"></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header"><h3>GPS Cascade Result</h3></div>
+          <div id="cascade-result" style="padding:1.2rem;font-size:0.82rem;color:var(--muted)">
+            Trigger a cascade above to see nearest patients ranked by GPS distance.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const totalScreens = 4;
+let currentScreen = 1;
+let currentPatientId = null;
+let currentBookingId = null;
+let currentBookingData = null;
+
+// ── NAVIGATION ──
+function buildDots() {
+  const c = document.getElementById('step-dots');
+  c.innerHTML = '';
+  for (let i = 1; i <= totalScreens; i++) {
+    const d = document.createElement('div');
+    d.className = 'step-dot' + (i === currentScreen ? ' active' : i < currentScreen ? ' done' : '');
+    c.appendChild(d);
+  }
+}
+
+function gotoScreen(n) {
+  document.getElementById('screen-' + currentScreen).classList.remove('active');
+  currentScreen = n;
+  document.getElementById('screen-' + currentScreen).classList.add('active');
+  document.getElementById('screen-label').textContent = 'Step ' + currentScreen + ' of ' + totalScreens;
+  buildDots();
+}
+
+function nextScreenNav() { if (currentScreen < totalScreens) gotoScreen(currentScreen + 1); }
+function prevScreen() { if (currentScreen > 1) gotoScreen(currentScreen - 1); }
+
+function switchView(v) {
+  document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+  document.getElementById('view-' + v).classList.add('active');
+  document.querySelectorAll('.nav-tab').forEach((t, i) => {
+    t.classList.toggle('active', (i === 0 && v === 'patient') || (i === 1 && v === 'hospital'));
+  });
+  if (v === 'hospital') loadQueue();
+}
+
+// ── REGISTER PATIENT ──
+async function registerPatient() {
+  const name = document.getElementById('p-name').value.trim();
+  const age = document.getElementById('p-age').value;
+  const blood_group = document.getElementById('p-blood').value;
+  const conditions = document.getElementById('p-conditions').value;
+  const phone = document.getElementById('p-phone').value.trim();
+
+  if (!name || !age) {
+    document.getElementById('reg-alert').innerHTML = '<div class="alert error">Please fill in name and age.</div>';
+    return;
+  }
+
+  const btn = document.getElementById('reg-btn');
+  btn.disabled = true;
+  btn.textContent = 'Saving...';
+
+  try {
+    const res = await fetch(API + '/register-patient', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, age: parseInt(age), blood_group, conditions, phone, lat: 17.3850, lng: 78.4867 })
+    });
+    const data = await res.json();
+
+    if (data.patient_id) {
+      currentPatientId = data.patient_id;
+      document.getElementById('reg-alert').innerHTML = '<div class="alert success">Profile saved! ID: ' + data.patient_id + '</div>';
+      setTimeout(() => gotoScreen(2), 1000);
+    } else {
+      document.getElementById('reg-alert').innerHTML = '<div class="alert error">' + (data.error || 'Registration failed') + '</div>';
+    }
+  } catch (e) {
+    document.getElementById('reg-alert').innerHTML = '<div class="alert error">Cannot connect to server. Is Flask running?</div>';
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Save Profile →';
+}
+
+// ── BOOK SLOT ──
+async function bookSlot() {
+  if (!currentPatientId) {
+    document.getElementById('book-alert').innerHTML = '<div class="alert error">Please register first.</div>';
+    return;
+  }
+
+  const hospital = document.getElementById('b-hospital').value;
+  const doctor = document.getElementById('b-doctor').value;
+  const slot_time = document.getElementById('b-time').value;
+
+  const btn = document.getElementById('book-btn');
+  btn.disabled = true;
+  btn.textContent = 'Booking...';
+
+  try {
+    const res = await fetch(API + '/book-slot', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ patient_id: currentPatientId, hospital, doctor, slot_time })
+    });
+    const data = await res.json();
+
+    if (data.booking_id) {
+      currentBookingId = data.booking_id;
+      currentBookingData = data;
+      document.getElementById('qr-img').src = data.qr_code;
+      document.getElementById('conf-id').textContent = data.booking_id;
+      document.getElementById('conf-hospital').textContent = hospital;
+      document.getElementById('conf-doctor').textContent = doctor;
+      document.getElementById('conf-time').textContent = slot_time;
+      document.getElementById('conf-pos').textContent = '#' + data.position_in_queue;
+      document.getElementById('live-slot').textContent = slot_time;
+      gotoScreen(3);
+    } else {
+      document.getElementById('book-alert').innerHTML = '<div class="alert error">' + (data.error || 'Booking failed') + '</div>';
+    }
+  } catch (e) {
+    document.getElementById('book-alert').innerHTML = '<div class="alert error">Cannot connect to server. Is Flask running?</div>';
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Confirm Booking →';
+}
+
+// ── REFRESH QUEUE ──
+async function refreshQueue() {
+  try {
+    const res = await fetch(API + '/get-queue');
+    const data = await res.json();
+    document.getElementById('live-total').textContent = data.total_in_queue + ' patients';
+
+    if (currentBookingId) {
+      const mine = data.queue.find(b => b.booking_id === currentBookingId);
+      if (mine) {
+        document.getElementById('live-pos').textContent = mine.position;
+        const eta = mine.position * 7;
+        document.getElementById('live-eta').textContent = 'Approx. ' + eta + ' min wait';
+      }
+    }
+  } catch (e) {
+    document.getElementById('live-eta').textContent = 'Could not refresh — is server running?';
+  }
+}
+
+// ── LOAD HOSPITAL QUEUE ──
+async function loadQueue() {
+  try {
+    const res = await fetch(API + '/get-queue');
+    const data = await res.json();
+
+    const booked = data.queue.filter(b => b.status === 'booked').length;
+    const present = data.queue.filter(b => b.status === 'present').length;
+    const missed = data.queue.filter(b => b.status === 'missed').length;
+
+    document.getElementById('stat-total').textContent = data.total_in_queue;
+    document.getElementById('stat-booked').textContent = booked;
+    document.getElementById('stat-present').textContent = present;
+    document.getElementById('stat-missed').textContent = missed;
+
+    const list = document.getElementById('queue-list');
+    if (data.queue.length === 0) {
+      list.innerHTML = '<div style="padding:2rem;text-align:center;color:var(--muted);font-size:0.88rem">No patients in queue yet</div>';
+      return;
+    }
+
+    list.innerHTML = '';
+    data.queue.forEach((b, i) => {
+      const row = document.createElement('div');
+      row.className = 'queue-row' + (b.status === 'present' ? ' current' : b.status === 'missed' ? ' missed-row' : '');
+      const statusColors = { booked: 'booked', present: 'present', missed: 'missed' };
+      row.innerHTML = `
+        <div class="q-num">${i + 1}</div>
+        <div><div class="q-name">${b.patient_name}</div><div class="q-reason">${b.booking_id}</div></div>
+        <div style="font-size:0.82rem;color:var(--muted)">${b.slot_time}</div>
+        <div class="q-status ${statusColors[b.status] || 'booked'}">${b.status}</div>
+      `;
+      list.appendChild(row);
+    });
+  } catch (e) {
+    document.getElementById('queue-list').innerHTML = '<div style="padding:2rem;text-align:center;color:var(--danger);font-size:0.88rem">Cannot connect to server</div>';
+  }
+}
+
+// ── HOSPITAL ACTIONS ──
+async function markPresent() {
+  const id = document.getElementById('action-booking-id').value.trim();
+  if (!id) { showActionResult('error', 'Enter a booking ID first'); return; }
+  await updateStatus(id, 'present');
+}
+
+async function markDone() {
+  const id = document.getElementById('action-booking-id').value.trim();
+  if (!id) { showActionResult('error', 'Enter a booking ID first'); return; }
+  await updateStatus(id, 'done');
+}
+
+async function updateStatus(id, status) {
+  try {
+    const res = await fetch(API + '/update-status', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ booking_id: id, status })
+    });
+    const data = await res.json();
+    showActionResult(data.message ? 'success' : 'error', data.message || data.error);
+    loadQueue();
+  } catch (e) {
+    showActionResult('error', 'Server error');
+  }
+}
+
+async function triggerCascade() {
+  const id = document.getElementById('action-booking-id').value.trim();
+  if (!id) { showActionResult('error', 'Enter a booking ID first'); return; }
+
+  try {
+    const res = await fetch(API + '/trigger-cascade', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ booking_id: id })
+    });
+    const data = await res.json();
+    showActionResult('success', 'Cascade triggered!');
+    loadQueue();
+
+    const cascadeDiv = document.getElementById('cascade-result');
+    if (data.cascade_order && data.cascade_order.length > 0) {
+      cascadeDiv.innerHTML = '<div style="margin-bottom:8px;font-weight:600;color:var(--charcoal)">Notify in this order:</div>' +
+        data.cascade_order.map((p, i) =>
+          `<div style="padding:8px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;font-size:0.82rem">
+            <span>${i + 1}. ${p.patient_name}</span>
+            <span style="color:var(--teal);font-weight:600">${p.distance_km} km</span>
+          </div>`
+        ).join('');
+    } else {
+      cascadeDiv.innerHTML = '<div style="color:var(--muted)">No available patients to fill this slot.</div>';
+    }
+  } catch (e) {
+    showActionResult('error', 'Server error');
+  }
+}
+
+function showActionResult(type, msg) {
+  document.getElementById('action-result').innerHTML = `<div class="alert ${type === 'success' ? 'success' : 'error'}" style="margin-top:8px">${msg}</div>`;
+  setTimeout(() => { document.getElementById('action-result').innerHTML = ''; }, 3000);
+}
+
+// ── INIT ──
+buildDots();
+</script>
+</body>
+</html>

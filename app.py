@@ -1,0 +1,22 @@
+from flask import Flask
+from flask_cors import CORS
+from routes.patients import patients_bp
+from routes.queue import queue_bp
+from routes.cascade import cascade_bp
+from db import init_db
+
+app = Flask(__name__)
+CORS(app)
+
+init_db()
+
+app.register_blueprint(patients_bp)
+app.register_blueprint(queue_bp)
+app.register_blueprint(cascade_bp)
+
+@app.route('/')
+def home():
+    return {"message": "MediQueue API is running!", "status": "ok", "database": "MongoDB Atlas"}
+
+if __name__ == '__main__':
+    app.run(debug=False)
