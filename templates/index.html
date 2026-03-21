@@ -328,7 +328,7 @@ nav {
   font-size: 0.7rem; font-weight: 700; text-align: center;
   text-transform: uppercase; letter-spacing: 0.4px;
 }
-.status-pill.booked { background: #EDE7F6; color: #4527A0; }
+.status-pill.booked { background: var(--teal-3); color: var(--teal); }
 .status-pill.present { background: var(--success-light); color: var(--success); }
 .status-pill.missed { background: var(--danger-light); color: var(--danger); }
 
@@ -395,24 +395,223 @@ nav {
 /* ── QR ── */
 .qr-wrap { text-align: center; margin: 0.8rem 0; }
 .qr-wrap img { width: 130px; height: 130px; border: 2px solid var(--teal); border-radius: var(--r); padding: 6px; background: white; }
+
+/* ── LANDING PAGE ── */
+.landing-view {
+  min-height: 100vh;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 2rem; text-align: center; gap: 2rem;
+}
+.hero-h1 { font-family: 'Syne', sans-serif; font-size: clamp(2.5rem, 8vw, 4.5rem); font-weight: 800; letter-spacing: -3px; line-height: 0.85; margin-bottom: 1.5rem; }
+.hero-p { font-size: 1.1rem; color: var(--muted); max-width: 540px; margin: 0 auto 2.5rem; line-height: 1.6; }
+.hero-ctas { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+.hero-btn {
+  padding: 18px 36px; border-radius: 40px; font-weight: 700; font-size: 1rem;
+  cursor: pointer; border: none; transition: all 0.25s; font-family: 'Instrument Sans', sans-serif;
+  display: flex; align-items: center; gap: 10px;
+}
+.hero-btn.primary { background: var(--teal); color: white; box-shadow: 0 10px 30px rgba(0,137,123,0.25); }
+.hero-btn.primary:hover { transform: translateY(-3px); background: var(--teal-2); box-shadow: 0 15px 40px rgba(0,137,123,0.3); }
+.hero-btn.outline { background: white; color: var(--ink); border: 2px solid var(--border); }
+.hero-btn.outline:hover { background: var(--surface); border-color: var(--teal); transform: translateY(-3px); }
+
+/* ── AUTH PAGES ── */
+.auth-view { display: none; min-height: 100vh; background: var(--surface); align-items: center; justify-content: center; padding: 2rem; }
+.auth-view.active { display: flex; }
+.auth-card {
+  width: 100%; max-width: 440px;
+  background: var(--white); padding: 2.5rem;
+  border-radius: var(--r-xl); border: 1px solid var(--border);
+  box-shadow: 0 24px 64px rgba(0,0,0,0.04);
+}
+.auth-header { margin-bottom: 2rem; }
+.auth-header h2 { font-family: 'Syne', sans-serif; font-size: 2rem; font-weight: 800; letter-spacing: -1px; }
+.auth-header p { color: var(--muted); font-size: 0.95rem; margin-top: 6px; }
+.back-link {
+  display: inline-flex; align-items: center; gap: 6px;
+  color: var(--muted); font-size: 0.85rem; font-weight: 600;
+  cursor: pointer; margin-bottom: 1.5rem; transition: color 0.2s;
+  text-decoration: none; border: none; background: transparent;
+}
+.back-link:hover { color: var(--teal); }
+
+/* ── DISCOVERY ── */
+.discovery-list { display: flex; flex-direction: column; gap: 12px; margin-top: 1rem; }
+.hospital-card {
+  background: var(--white); border: 1px solid var(--border);
+  border-radius: var(--r-lg); padding: 1.2rem;
+  transition: all 0.2s; cursor: pointer;
+}
+.hospital-card:hover { border-color: var(--teal-4); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+.h-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
+.h-name { font-weight: 700; font-size: 0.9rem; line-height: 1.3; flex: 1; }
+.h-dist { font-size: 0.7rem; color: var(--teal); font-weight: 700; background: var(--teal-3); padding: 2px 8px; border-radius: 40px; white-space: nowrap; }
+.h-dept { font-size: 0.72rem; color: var(--muted); line-height: 1.4; }
+.h-slot { font-size: 0.75rem; font-weight: 700; color: var(--ink); margin-top: 10px; display: flex; align-items: center; gap: 4px; }
+.h-slot::before { content: 'Next slot:'; font-weight: 500; color: var(--muted); }
+
+.badge-demo {
+  padding: 4px 10px; border-radius: 40px; font-size: 0.7rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.4px;
+}
+.badge-demo.notified { background: var(--teal-3); color: var(--teal); }
+.badge-demo.pending { background: var(--amber-light); color: var(--amber); }
+.badge-demo.standby { background: #ECEFF1; color: #546E7A; }
+
+/* ── FOOTER ── */
+footer { padding: 4rem 2.5rem; text-align: center; border-top: 1px solid var(--border); }
+.proto-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--ink); color: white;
+  padding: 8px 18px; border-radius: 40px;
+  font-size: 0.75rem; font-weight: 600; letter-spacing: 0.5px;
+}
 </style>
 </head>
 <body>
 
-<script>const API = "https://mediqueue-40ch.onrender.com";</script>
+<script>const API = "";</script>
 
-<nav>
+<nav style="display:none" id="main-nav">
   <div class="logo"><div class="logo-dot"></div>MediQueue</div>
-  <div class="nav-pills">
-    <button class="pill active" onclick="switchView('patient')">Patient App</button>
-    <button class="pill" onclick="switchView('hospital')">Hospital Dashboard</button>
+  <div style="display:flex; align-items:center; gap:2rem">
+    <div class="nav-pills">
+      <button class="pill active" id="pill-patient" onclick="switchView('patient')">Patient App</button>
+      <button class="pill" id="pill-hospital" onclick="switchView('hospital')">Hospital Dashboard</button>
+    </div>
+    <button class="btn-sm" style="background:transparent; color:var(--muted); border:1px solid var(--border); font-size: 0.7rem;" onclick="logout()">Logout</button>
   </div>
 </nav>
 
 <!-- ════════════════════════════
+     LANDING VIEW
+════════════════════════════ -->
+<div class="view active" id="view-landing">
+  <div class="patient-layout">
+    <div class="phone-side">
+      <div class="phone">
+        <div class="phone-island"></div>
+        <div class="phone-screen">
+          <div class="screen active">
+            <div class="screen-top" style="background:var(--teal)">
+              <h2>Live Queue</h2>
+              <p>Real-time position</p>
+            </div>
+            <div class="screen-body">
+              <div class="live-card">
+                <div class="live-sub">Your position</div>
+                <div class="live-num">3</div>
+                <div class="live-sub">in queue</div>
+                <div class="progress"><div class="progress-bar" style="width:75%"></div></div>
+                <div class="live-eta">Approx. 18 min wait</div>
+              </div>
+              <div class="detail-row"><span class="lbl">Slot time</span><span class="val">10:30 AM</span></div>
+              <div class="detail-row"><span class="lbl">Total in queue</span><span class="val">8 patients</span></div>
+              <div class="alert-card warn" style="margin-top:8px">
+                <strong>GPS alert ready</strong>
+                We'll notify you when it's time to head over — no need to wait at hospital
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="info-side">
+      <div class="logo" style="margin-bottom: 2rem;"><div class="logo-dot"></div>MediQueue</div>
+      <h1 class="hero-h1" style="text-align:left; font-size: clamp(2rem, 5vw, 3.5rem); margin-bottom: 1rem;">Smart hospital<br>queuing <span>simplified.</span></h1>
+      <p class="hero-p" style="text-align:left; margin-left:0; margin-bottom: 2rem;">Skip the waiting room. Track your position in real-time and get notified exactly when to leave your home.</p>
+      <div class="hero-ctas" style="justify-content:flex-start;">
+        <button class="hero-btn primary" onclick="switchView('patient-login')">I'm a Patient</button>
+        <button class="hero-btn outline" onclick="switchView('hospital-login')">I'm a Doctor / Hospital Staff</button>
+        <button class="hero-btn outline" onclick="tryDemo()" style="border-color: var(--teal); color: var(--teal)">Try Demo</button>
+      </div>
+
+      <div style="margin-top: 4rem; display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+        <div>
+          <h3 style="font-family: 'Syne', sans-serif; margin-bottom: 0.5rem;">For Patients</h3>
+          <p style="font-size: 0.85rem; color: var(--muted);">Book slots, track live position, and get GPS-based arrival alerts.</p>
+        </div>
+        <div>
+          <h3 style="font-family: 'Syne', sans-serif; margin-bottom: 0.5rem;">For Hospitals</h3>
+          <p style="font-size: 0.85rem; color: var(--muted);">Manage queues, reduce crowding, and auto-fill missed slots with GPS Cascade.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════
+     PATIENT LOGIN
+════════════════════════════ -->
+<div class="view" id="view-patient-login">
+  <div class="auth-view active">
+    <div class="auth-card">
+      <button class="back-link" onclick="switchView('landing')">← Back to home</button>
+      <div class="auth-header">
+        <h2>Patient Login</h2>
+        <p>Enter your credentials to access your dashboard</p>
+      </div>
+      <div class="field"><label>Email or Phone</label><input type="text" id="pl-user" placeholder="Enter email or phone"/></div>
+      <div class="field"><label>Password</label><input type="password" id="pl-pass" placeholder="••••••••"/></div>
+      <button class="cta" onclick="handleAuth('patient', 'login')">Login to MediQueue</button>
+      <p style="text-align:center; font-size:0.85rem; margin-top:1.5rem; color:var(--muted)">
+        New to MediQueue? <a href="javascript:void(0)" onclick="switchView('patient-signup')" style="color:var(--teal); font-weight:600; text-decoration:none">Create account</a>
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════
+     PATIENT SIGNUP
+════════════════════════════ -->
+<div class="view" id="view-patient-signup">
+  <div class="auth-view active">
+    <div class="auth-card">
+      <button class="back-link" onclick="switchView('patient-login')">← Back to login</button>
+      <div class="auth-header">
+        <h2>Patient Signup</h2>
+        <p>Join MediQueue for a seamless hospital experience</p>
+      </div>
+      <div class="field"><label>Full Name</label><input type="text" id="ps-name" placeholder="John Doe"/></div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px">
+        <div class="field"><label>Age</label><input type="number" id="ps-age" placeholder="25"/></div>
+        <div class="field"><label>Blood Group</label>
+          <select id="ps-blood"><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>O+</option><option>O-</option><option>AB+</option><option>AB-</option></select>
+        </div>
+      </div>
+      <div class="field"><label>Chronic Conditions</label><input type="text" id="ps-cond" placeholder="None, Diabetes, etc."/></div>
+      <div class="field"><label>Phone Number</label><input type="text" id="ps-phone" placeholder="10-digit number"/></div>
+      <div class="field"><label>Email</label><input type="email" id="ps-email" placeholder="john@example.com"/></div>
+      <div class="field"><label>Password</label><input type="password" id="ps-pass" placeholder="••••••••"/></div>
+      <button class="cta" onclick="handleAuth('patient', 'signup')">Create Account</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════
+     HOSPITAL LOGIN
+════════════════════════════ -->
+<div class="view" id="view-hospital-login">
+  <div class="auth-view active">
+    <div class="auth-card">
+      <button class="back-link" onclick="switchView('landing')">← Back to home</button>
+      <div class="auth-header">
+        <h2>Hospital Portal</h2>
+        <p>Access your live queue and management tools</p>
+      </div>
+      <div class="field"><label>Hospital Name</label><input type="text" id="hl-name" placeholder="Apollo Clinic"/></div>
+      <div class="field"><label>Doctor ID or Email</label><input type="text" id="hl-user" placeholder="DR-123 or email"/></div>
+      <div class="field"><label>Hospital Code</label><input type="text" id="hl-code" placeholder="HOSP-001"/></div>
+      <div class="field"><label>Password</label><input type="password" id="hl-pass" placeholder="••••••••"/></div>
+      <button class="cta" onclick="handleAuth('hospital', 'login')">Login to Portal</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════
      PATIENT VIEW
 ════════════════════════════ -->
-<div class="view active" id="view-patient">
+<div class="view" id="view-patient">
   <div class="patient-layout">
 
     <!-- PHONE -->
@@ -424,7 +623,7 @@ nav {
         <div class="phone-screen">
 
           <!-- Screen 1: Register -->
-          <div class="screen active" id="screen-1">
+          <div class="screen" id="screen-1">
             <div class="screen-top">
               <h2>MediQueue</h2>
               <p>Smart Hospital Queue</p>
@@ -447,6 +646,7 @@ nav {
           <div class="screen" id="screen-2">
             <div class="screen-top"><h2>Book a Slot</h2><p>Pick hospital & time</p></div>
             <div class="screen-body">
+              <button class="cta" onclick="gotoScreen(5)" style="background:var(--white); color:var(--teal); border:1.5px solid var(--teal); margin-bottom:1rem">Find Hospitals Near Me 📍</button>
               <div class="screen-title">Select your appointment</div>
               <div class="field"><label>Hospital</label>
                 <select id="b-hospital">
@@ -487,19 +687,39 @@ nav {
             </div>
           </div>
 
+          <!-- Screen 5: Discovery -->
+          <div class="screen" id="screen-5">
+            <div class="screen-top"><h2>Find Nearby</h2><p>Hospitals within reach</p></div>
+            <div class="screen-body">
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:1rem">
+                <div class="field"><label>Dept</label>
+                  <select id="disc-dept" onchange="findNearbyHospitals()"><option value="">All</option><option>General OPD</option><option>Cardiology</option><option>Orthopaedics</option></select>
+                </div>
+                <div class="field"><label>Time</label>
+                  <select id="disc-time" onchange="findNearbyHospitals()"><option value="">Any</option><option value="morning">Morning</option><option value="afternoon">Afternoon</option><option value="evening">Evening</option></select>
+                </div>
+              </div>
+              <div class="discovery-list" id="discovery-list">
+                <div style="text-align:center; padding:2rem; color:var(--muted); font-size:0.8rem">Click below to find hospitals near your location.</div>
+              </div>
+              <button class="cta" id="disc-btn" onclick="findNearbyHospitals()" style="margin-top:1rem">Search Nearby 🔎</button>
+            </div>
+          </div>
+
           <!-- Screen 4: Live Queue -->
-          <div class="screen" id="screen-4">
+          <div class="screen active" id="screen-4">
             <div class="screen-top"><h2>Live Queue</h2><p>Real-time position</p></div>
             <div class="screen-body">
               <div class="live-card">
                 <div class="live-sub">Your position</div>
-                <div class="live-num" id="live-pos">—</div>
+                <div class="live-num" id="live-pos">3</div>
                 <div class="live-sub">in queue</div>
-                <div class="progress"><div class="progress-bar" id="live-bar" style="width:20%"></div></div>
-                <div class="live-eta" id="live-eta">Loading...</div>
+                <div class="progress"><div class="progress-bar" id="live-bar" style="width:75%"></div></div>
+                <div class="live-eta" id="live-eta">Approx. 18 min wait</div>
               </div>
-              <div class="detail-row"><span class="lbl">Slot time</span><span class="val" id="live-slot">—</span></div>
-              <div class="detail-row"><span class="lbl">Total in queue</span><span class="val" id="live-total">—</span></div>
+              <div class="detail-row"><span class="lbl">Slot time</span><span class="val" id="live-slot">10:30 AM</span></div>
+              <div class="detail-row"><span class="lbl">Total in queue</span><span class="val" id="live-total">8 patients</span></div>
+              <button class="cta" onclick="gotoScreen(5)" style="background:var(--white); color:var(--teal); border:1.5px solid var(--teal); margin: 10px 0;">Find Hospitals Near Me 📍</button>
               <div class="alert-card warn" style="margin-top:8px">
                 <strong>GPS alert ready</strong>
                 We'll notify you when it's time to head over — no need to wait at hospital
@@ -630,6 +850,10 @@ nav {
   </div>
 </div>
 
+<footer>
+  <div class="proto-badge">Prototype — built for Startup Aid 2026</div>
+</footer>
+
 <script>
 const TOTAL = 4;
 let cur = 1;
@@ -638,13 +862,15 @@ let bookingId = null;
 
 function buildTrack() {
   const t = document.getElementById('step-track');
+  if (!t) return;
   t.innerHTML = '';
   for (let i = 1; i <= TOTAL; i++) {
     const d = document.createElement('div');
     d.className = 'step-pip' + (i === cur ? ' active' : i < cur ? ' done' : '');
     t.appendChild(d);
   }
-  document.getElementById('step-label').textContent = 'Step ' + cur + ' of ' + TOTAL;
+  const label = document.getElementById('step-label');
+  if (label) label.textContent = 'Step ' + cur + ' of ' + TOTAL;
 }
 
 function gotoScreen(n) {
@@ -658,9 +884,183 @@ function prevScreen() { if (cur > 1) gotoScreen(cur - 1); }
 
 function switchView(v) {
   document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
-  document.getElementById('view-' + v).classList.add('active');
-  document.querySelectorAll('.pill').forEach((p, i) => p.classList.toggle('active', (i===0&&v==='patient')||(i===1&&v==='hospital')));
+  const target = document.getElementById('view-' + v);
+  if (target) target.classList.add('active');
+
+  const nav = document.getElementById('main-nav');
+  const isDashboard = ['patient', 'hospital'].includes(v);
+  nav.style.display = isDashboard ? 'flex' : 'none';
+
+  if (isDashboard) {
+    document.getElementById('pill-patient').classList.toggle('active', v === 'patient');
+    document.getElementById('pill-hospital').classList.toggle('active', v === 'hospital');
+  }
+
   if (v === 'hospital') loadQueue();
+}
+
+function checkAuth() {
+  const user = JSON.parse(localStorage.getItem('mediqueue_user'));
+  if (user) {
+    if (user.role === 'patient') {
+      patientId = user.id || user.phone;
+      switchView('patient');
+    } else if (user.role === 'hospital') {
+      switchView('hospital');
+    }
+  } else {
+    switchView('landing');
+  }
+}
+
+function handleAuth(role, type) {
+  let user = { role };
+  if (role === 'patient') {
+    if (type === 'signup') {
+      user.name = document.getElementById('ps-name').value;
+      user.phone = document.getElementById('ps-phone').value;
+      user.id = 'P-' + Math.random().toString(36).substr(2, 6).toUpperCase();
+    } else {
+      user.phone = document.getElementById('pl-user').value;
+    }
+    patientId = user.id || user.phone;
+    localStorage.setItem('mediqueue_user', JSON.stringify(user));
+    switchView('patient');
+  } else {
+    user.hospital = document.getElementById('hl-name').value;
+    user.hospitalCode = document.getElementById('hl-code').value;
+    localStorage.setItem('mediqueue_user', JSON.stringify(user));
+    switchView('hospital');
+  }
+}
+
+function logout() {
+  localStorage.removeItem('mediqueue_user');
+  location.reload();
+}
+
+function haversine(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+async function findNearbyHospitals() {
+  const btn = document.getElementById('disc-btn');
+  const list = document.getElementById('discovery-list');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span> Finding...';
+  list.innerHTML = '<div style="text-align:center; padding:2rem;"><span class="spin" style="border-top-color:var(--teal)"></span> Finding hospitals near you...</div>';
+
+  navigator.geolocation.getCurrentPosition(async (pos) => {
+    const lat = pos.coords.latitude;
+    const lng = pos.coords.longitude;
+    try {
+      const res = await fetch('/get-hospitals');
+      const hospitals = await res.json();
+      const dept = document.getElementById('disc-dept').value;
+      const timeSlot = document.getElementById('disc-time').value;
+
+      let results = hospitals.map(h => ({
+        ...h,
+        distance: haversine(lat, lng, h.location.lat, h.location.lng)
+      }));
+
+      // Filter by department
+      if (dept) results = results.filter(h => h.departments.includes(dept));
+
+      // Filter by time slot
+      if (timeSlot) {
+        results = results.filter(h => {
+          return h.availableSlots.some(s => {
+            const hour = parseInt(s.split(':')[0]);
+            const isPM = s.includes('PM');
+            let h24 = isPM && hour !== 12 ? hour + 12 : !isPM && hour === 12 ? 0 : hour;
+            if (timeSlot === 'morning') return h24 >= 8 && h24 < 12;
+            if (timeSlot === 'afternoon') return h24 >= 12 && h24 < 16;
+            if (timeSlot === 'evening') return h24 >= 16 && h24 < 19;
+            return false;
+          });
+        });
+      }
+
+      results.sort((a, b) => a.distance - b.distance);
+
+      if (results.length === 0) {
+        list.innerHTML = '<div style="text-align:center; padding:2rem; color:var(--muted)">No hospitals found matching your criteria.</div>';
+      } else {
+        list.innerHTML = results.map(h => `
+          <div class="hospital-card" onclick="preFillBooking('${h.name}')">
+            <div class="h-top">
+              <div class="h-name">${h.name}</div>
+              <div class="h-dist">${h.distance.toFixed(1)} km</div>
+            </div>
+            <div class="h-dept">${h.departments.slice(0, 3).join(', ')}${h.departments.length > 3 ? '...' : ''}</div>
+            <div class="h-slot">${h.availableSlots[0]}</div>
+            <button class="cta" style="padding:6px; font-size:0.75rem; margin-top:8px">Book Here</button>
+          </div>
+        `).join('');
+      }
+    } catch (e) {
+      list.innerHTML = '<div style="text-align:center; padding:2rem; color:var(--danger)">Failed to fetch hospitals.</div>';
+    }
+    btn.disabled = false;
+    btn.innerHTML = 'Search Nearby 🔎';
+  }, (err) => {
+    list.innerHTML = '<div style="text-align:center; padding:2rem; color:var(--danger)">GPS access denied. Please enable location.</div>';
+    btn.disabled = false;
+    btn.innerHTML = 'Search Nearby 🔎';
+  });
+}
+
+function preFillBooking(hName) {
+  const select = document.getElementById('b-hospital');
+  // Add option if not exists
+  let exists = false;
+  for (let i = 0; i < select.options.length; i++) {
+    if (select.options[i].text === hName) {
+      select.selectedIndex = i;
+      exists = true;
+      break;
+    }
+  }
+  if (!exists) {
+    const opt = document.createElement('option');
+    opt.text = hName;
+    opt.value = hName;
+    select.add(opt);
+    select.value = hName;
+  }
+  gotoScreen(2);
+}
+
+function tryDemo() {
+  const demoUser = {
+    role: 'patient',
+    name: 'Ravi Kumar',
+    phone: '9876543210',
+    id: 'MQ-2847'
+  };
+  localStorage.setItem('mediqueue_user', JSON.stringify(demoUser));
+  patientId = demoUser.id;
+  switchView('patient');
+  // Fill some demo data
+  document.getElementById('p-name').value = demoUser.name;
+  document.getElementById('p-phone').value = demoUser.phone;
+
+  // Set demo queue tracking state
+  document.getElementById('live-pos').textContent = '3';
+  document.getElementById('live-bar').style.width = '75%';
+  document.getElementById('live-eta').textContent = 'Approx. 18 min wait';
+  document.getElementById('live-slot').textContent = '10:30 AM';
+  document.getElementById('live-total').textContent = '8 patients';
+
+  gotoScreen(4); // Start at live queue tracking for demo
 }
 
 function showMsg(id, type, text) {
@@ -792,32 +1192,44 @@ function markDone() { updateStatus('done'); }
 async function triggerCascade() {
   const id = document.getElementById('action-id').value.trim();
   if (!id) { showMsg('action-msg','error','Enter a booking ID first'); return; }
+
+  showMsg('action-msg','success','Cascade triggered!');
+  setTimeout(()=>document.getElementById('action-msg').innerHTML='', 3000);
+
+  const div = document.getElementById('cascade-result');
+  const demoResults = [
+    { name: "Ravi Kumar", bookingId: "MQ-2847", distance: "0.4 km", status: "notified", eta: "~5 min" },
+    { name: "Sunita Devi", bookingId: "MQ-1193", distance: "1.1 km", status: "pending", eta: "~12 min" },
+    { name: "Arjun Reddy", bookingId: "MQ-3305", distance: "2.3 km", status: "standby", eta: "~20 min" }
+  ];
+
+  div.innerHTML = demoResults.map((p,i) => `
+    <div class="cascade-item" style="flex-direction:column; align-items:flex-start; gap:6px; padding:12px 0;">
+      <div style="display:flex; align-items:center; justify-content:space-between; width:100%">
+        <div style="display:flex;align-items:center;gap:8px">
+          <div class="cascade-rank">${i+1}</div>
+          <span style="font-weight:700">${p.name}</span>
+        </div>
+        <span class="badge-demo ${p.status}">${p.status}</span>
+      </div>
+      <div style="display:flex; justify-content:space-between; width:100%; font-size:0.75rem; color:var(--muted)">
+        <span>ID: ${p.bookingId} • ${p.distance}</span>
+        <span style="color:var(--teal); font-weight:600">ETA: ${p.eta}</span>
+      </div>
+    </div>`).join('');
+
+  // Also update queue if possible
   try {
-    const res = await fetch(API + '/trigger-cascade', {
+    await fetch(API + '/update-status', {
       method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({booking_id: id})
+      body: JSON.stringify({booking_id: id, status: 'missed'})
     });
-    const data = await res.json();
-    showMsg('action-msg','success','Cascade triggered!');
-    setTimeout(()=>document.getElementById('action-msg').innerHTML='', 3000);
     loadQueue();
-    const div = document.getElementById('cascade-result');
-    if (data.cascade_order && data.cascade_order.length) {
-      div.innerHTML = data.cascade_order.map((p,i) => `
-        <div class="cascade-item">
-          <div style="display:flex;align-items:center;gap:8px">
-            <div class="cascade-rank">${i+1}</div>
-            <span style="font-weight:600">${p.patient_name}</span>
-          </div>
-          <span class="cascade-dist">${p.distance_km} km</span>
-        </div>`).join('');
-    } else {
-      div.innerHTML = '<div style="font-size:0.82rem;color:var(--muted)">No available patients to fill this slot.</div>';
-    }
-  } catch(e) { showMsg('action-msg','error','Server error'); }
+  } catch(e) {}
 }
 
 buildTrack();
+checkAuth();
 </script>
 </body>
 </html>
