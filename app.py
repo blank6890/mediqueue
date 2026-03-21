@@ -3,6 +3,8 @@ from flask_cors import CORS
 from routes.patients import patients_bp
 from routes.queue import queue_bp
 from routes.cascade import cascade_bp
+from routes.hospitals import hospitals_bp
+from routes.auth import auth_bp
 from db import init_db
 
 app = Flask(__name__)
@@ -14,6 +16,8 @@ init_db()
 app.register_blueprint(patients_bp)
 app.register_blueprint(queue_bp)
 app.register_blueprint(cascade_bp)
+app.register_blueprint(hospitals_bp)
+app.register_blueprint(auth_bp)
 
 @app.route('/')
 def home():
