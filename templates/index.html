@@ -507,9 +507,9 @@ footer { padding: 4rem 2.5rem; text-align: center; border-top: 1px solid var(--b
               </div>
               <div class="detail-row"><span class="lbl">Slot time</span><span class="val">10:30 AM</span></div>
               <div class="detail-row"><span class="lbl">Total in queue</span><span class="val">8 patients</span></div>
-              <div class="alert-card warn" style="margin-top:8px">
-                <strong>GPS alert ready</strong>
-                We'll notify you when it's time to head over — no need to wait at hospital
+              <div class="alert-card info" style="margin-top:8px">
+                <strong>You are #3 in queue</strong>
+                Estimated wait: 18 mins
               </div>
             </div>
           </div>
@@ -544,14 +544,14 @@ footer { padding: 4rem 2.5rem; text-align: center; border-top: 1px solid var(--b
      PATIENT LOGIN
 ════════════════════════════ -->
 <div class="view" id="view-patient-login">
-  <div class="auth-view active">
+  <div class="auth-view active" style="background:var(--teal-3)">
     <div class="auth-card">
       <button class="back-link" onclick="switchView('landing')">← Back to home</button>
       <div class="auth-header">
         <h2>Patient Login</h2>
         <p>Enter your credentials to access your dashboard</p>
       </div>
-      <div class="field"><label>Email or Phone</label><input type="text" id="pl-user" placeholder="Enter email or phone"/></div>
+      <div class="field"><label>Phone Number or Email</label><input type="text" id="pl-user" placeholder="Enter phone number or email"/></div>
       <div class="field"><label>Password</label><input type="password" id="pl-pass" placeholder="••••••••"/></div>
       <button class="cta" onclick="handleAuth('patient', 'login')">Login to MediQueue</button>
       <p style="text-align:center; font-size:0.85rem; margin-top:1.5rem; color:var(--muted)">
@@ -565,7 +565,7 @@ footer { padding: 4rem 2.5rem; text-align: center; border-top: 1px solid var(--b
      PATIENT SIGNUP
 ════════════════════════════ -->
 <div class="view" id="view-patient-signup">
-  <div class="auth-view active">
+  <div class="auth-view active" style="background:var(--teal-3)">
     <div class="auth-card">
       <button class="back-link" onclick="switchView('patient-login')">← Back to login</button>
       <div class="auth-header">
@@ -887,6 +887,20 @@ function switchView(v) {
   const target = document.getElementById('view-' + v);
   if (target) target.classList.add('active');
 
+  // Update URL for auth views
+  const currentPath = window.location.pathname;
+  let targetPath = null;
+  if (v === 'patient-login') targetPath = '/patient/login';
+  else if (v === 'patient-signup') targetPath = '/patient/signup';
+  else if (v === 'hospital-login') targetPath = '/hospital/login';
+  else if (v === 'landing') targetPath = '/';
+
+  if (targetPath && currentPath !== targetPath) {
+    try {
+      history.pushState({view:v}, '', targetPath);
+    } catch(e) { console.error("pushState failed:", e); }
+  }
+
   const nav = document.getElementById('main-nav');
   const isDashboard = ['patient', 'hospital'].includes(v);
   nav.style.display = isDashboard ? 'flex' : 'none';
@@ -900,11 +914,18 @@ function switchView(v) {
 }
 
 function checkAuth() {
+  const path = window.location.pathname;
+  if (path === '/patient/login') { switchView('patient-login'); return; }
+  if (path === '/patient/signup') { switchView('patient-signup'); return; }
+  if (path === '/hospital/login') { switchView('hospital-login'); return; }
+
   const user = JSON.parse(localStorage.getItem('mediqueue_user'));
   if (user) {
     if (user.role === 'patient') {
       patientId = user.id || user.phone;
       switchView('patient');
+      if (user.name) document.getElementById('p-name').value = user.name;
+      if (user.phone) document.getElementById('p-phone').value = user.phone;
     } else if (user.role === 'hospital') {
       switchView('hospital');
     }
@@ -918,16 +939,27 @@ function handleAuth(role, type) {
   if (role === 'patient') {
     if (type === 'signup') {
       user.name = document.getElementById('ps-name').value;
+      user.age = document.getElementById('ps-age').value;
+      user.bloodGroup = document.getElementById('ps-blood').value;
+      user.conditions = document.getElementById('ps-cond').value;
       user.phone = document.getElementById('ps-phone').value;
+      user.email = document.getElementById('ps-email').value;
       user.id = 'P-' + Math.random().toString(36).substr(2, 6).toUpperCase();
     } else {
-      user.phone = document.getElementById('pl-user').value;
+      user.identifier = document.getElementById('pl-user').value;
     }
-    patientId = user.id || user.phone;
+    patientId = user.id || user.identifier || user.phone;
     localStorage.setItem('mediqueue_user', JSON.stringify(user));
     switchView('patient');
+    // Pre-fill profile if available
+    if (user.name) document.getElementById('p-name').value = user.name;
+    if (user.age) document.getElementById('p-age').value = user.age;
+    if (user.bloodGroup) document.getElementById('p-blood').value = user.bloodGroup;
+    if (user.conditions) document.getElementById('p-conditions').value = user.conditions;
+    if (user.phone) document.getElementById('p-phone').value = user.phone;
   } else {
     user.hospital = document.getElementById('hl-name').value;
+    user.doctorIdentifier = document.getElementById('hl-user').value;
     user.hospitalCode = document.getElementById('hl-code').value;
     localStorage.setItem('mediqueue_user', JSON.stringify(user));
     switchView('hospital');
@@ -1000,9 +1032,9 @@ async function findNearbyHospitals() {
               <div class="h-name">${h.name}</div>
               <div class="h-dist">${h.distance.toFixed(1)} km</div>
             </div>
-            <div class="h-dept">${h.departments.slice(0, 3).join(', ')}${h.departments.length > 3 ? '...' : ''}</div>
-            <div class="h-slot">${h.availableSlots[0]}</div>
-            <button class="cta" style="padding:6px; font-size:0.75rem; margin-top:8px">Book Here</button>
+            <div class="h-dept" style="margin-bottom: 4px;"><strong>Depts:</strong> ${h.departments.join(', ')}</div>
+            <div class="h-slot"><strong>Next available:</strong> ${h.availableSlots[0]}</div>
+            <button class="cta" style="padding:6px; font-size:0.75rem; margin-top:10px">Book Here</button>
           </div>
         `).join('');
       }
@@ -1230,6 +1262,10 @@ async function triggerCascade() {
 
 buildTrack();
 checkAuth();
+
+window.onpopstate = function(e) {
+  checkAuth();
+};
 </script>
 </body>
 </html>
