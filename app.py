@@ -20,6 +20,11 @@ app.register_blueprint(hospitals_bp)
 app.register_blueprint(auth_bp)
 
 @app.route('/')
+@app.route('/patient/login')
+@app.route('/patient/signup')
+@app.route('/hospital/login')
+@app.route('/patient/dashboard')
+@app.route('/hospital/dashboard')
 def home():
     return render_template('index.html')
 

@@ -1,8 +1,9 @@
+Pillow
+PyJWT==2.12.1
+dnspython
 flask
 flask-cors
-pymongo
-dnspython
-qrcode
-Pillow
 gunicorn
-certifi
+pymongo
+qrcode
+twilio==9.10.4
