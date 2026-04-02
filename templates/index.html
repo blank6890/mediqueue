@@ -882,7 +882,7 @@ function gotoScreen(n) {
 function nextScreen() { if (cur < TOTAL) gotoScreen(cur + 1); }
 function prevScreen() { if (cur > 1) gotoScreen(cur - 1); }
 
-function switchView(v) {
+function switchView(v, push = true) {
   document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
   const target = document.getElementById('view-' + v);
   if (target) target.classList.add('active');
@@ -896,41 +896,123 @@ function switchView(v) {
     document.getElementById('pill-hospital').classList.toggle('active', v === 'hospital');
   }
 
-  if (v === 'hospital') loadQueue();
-}
-
-function checkAuth() {
-  const user = JSON.parse(localStorage.getItem('mediqueue_user'));
-  if (user) {
-    if (user.role === 'patient') {
-      patientId = user.id || user.phone;
-      switchView('patient');
-    } else if (user.role === 'hospital') {
-      switchView('hospital');
+  if (v === 'hospital') {
+    const user = JSON.parse(localStorage.getItem('mediqueue_user'));
+    if (user) {
+      document.querySelector('.dash-title').textContent = user.hospital + ' — OPD';
+      document.querySelector('.dash-sub').textContent = user.name + ' · Live Queue Management';
     }
-  } else {
-    switchView('landing');
+    loadQueue();
+  }
+
+  if (push) {
+    let path = '/';
+    if (v === 'patient-login') path = '/patient/login';
+    else if (v === 'patient-signup') path = '/patient/signup';
+    else if (v === 'hospital-login') path = '/hospital/login';
+    else if (v === 'patient') path = '/patient/dashboard';
+    else if (v === 'hospital') path = '/hospital/dashboard';
+    history.pushState({view: v}, '', path);
   }
 }
 
-function handleAuth(role, type) {
-  let user = { role };
-  if (role === 'patient') {
-    if (type === 'signup') {
-      user.name = document.getElementById('ps-name').value;
-      user.phone = document.getElementById('ps-phone').value;
-      user.id = 'P-' + Math.random().toString(36).substr(2, 6).toUpperCase();
-    } else {
-      user.phone = document.getElementById('pl-user').value;
-    }
-    patientId = user.id || user.phone;
-    localStorage.setItem('mediqueue_user', JSON.stringify(user));
-    switchView('patient');
+window.onpopstate = function(event) {
+  if (event.state && event.state.view) {
+    switchView(event.state.view, false);
   } else {
-    user.hospital = document.getElementById('hl-name').value;
-    user.hospitalCode = document.getElementById('hl-code').value;
-    localStorage.setItem('mediqueue_user', JSON.stringify(user));
-    switchView('hospital');
+    checkAuth();
+  }
+};
+
+function checkAuth() {
+  const user = JSON.parse(localStorage.getItem('mediqueue_user'));
+  const path = window.location.pathname;
+
+  if (user) {
+    if (user.role === 'patient') {
+      patientId = user.id;
+      // Pre-fill profile if needed
+      document.getElementById('p-name').value = user.name || '';
+      document.getElementById('p-phone').value = user.phone || '';
+      document.getElementById('p-age').value = user.age || '';
+      document.getElementById('p-blood').value = user.blood_group || 'B+';
+      document.getElementById('p-conditions').value = user.conditions || '';
+
+      if (path === '/hospital/dashboard') switchView('patient');
+      else switchView('patient');
+    } else if (user.role === 'hospital') {
+      if (path === '/patient/dashboard') switchView('hospital');
+      else switchView('hospital');
+    }
+  } else {
+    if (path === '/patient/login') switchView('patient-login', false);
+    else if (path === '/patient/signup') switchView('patient-signup', false);
+    else if (path === '/hospital/login') switchView('hospital-login', false);
+    else switchView('landing', false);
+  }
+}
+
+async function handleAuth(role, type) {
+  const btn = event.target;
+  const originalText = btn.textContent;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span> Processing...';
+
+  try {
+    let endpoint = role === 'patient' ? (type === 'signup' ? '/patient/signup' : '/patient/login') : '/hospital/login';
+    let body = {};
+
+    if (role === 'patient') {
+      if (type === 'signup') {
+        body = {
+          name: document.getElementById('ps-name').value,
+          age: document.getElementById('ps-age').value,
+          blood_group: document.getElementById('ps-blood').value,
+          conditions: document.getElementById('ps-cond').value,
+          phone: document.getElementById('ps-phone').value,
+          email: document.getElementById('ps-email').value,
+          password: document.getElementById('ps-pass').value
+        };
+      } else {
+        body = {
+          identifier: document.getElementById('pl-user').value,
+          password: document.getElementById('pl-pass').value
+        };
+      }
+    } else {
+      body = {
+        hospital_name: document.getElementById('hl-name').value,
+        doctor_id: document.getElementById('hl-user').value,
+        hospital_code: document.getElementById('hl-code').value,
+        password: document.getElementById('hl-pass').value
+      };
+    }
+
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+
+    if (res.ok) {
+      localStorage.setItem('mediqueue_user', JSON.stringify(data.user));
+      localStorage.setItem('mediqueue_token', data.token);
+      if (role === 'patient') {
+        patientId = data.user.id;
+        switchView('patient');
+      } else {
+        switchView('hospital');
+      }
+    } else {
+      alert(data.error || 'Authentication failed');
+    }
+  } catch (e) {
+    console.error(e);
+    alert('Server error. Please try again.');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = originalText;
   }
 }
 
