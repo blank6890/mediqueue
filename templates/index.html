@@ -329,6 +329,9 @@ nav {
   text-transform: uppercase; letter-spacing: 0.4px;
 }
 .status-pill.booked { background: var(--teal-3); color: var(--teal); }
+.status-pill.notified { background: var(--teal-3); color: var(--teal); }
+.status-pill.pending { background: var(--amber-light); color: var(--amber); }
+.status-pill.standby { background: #ECEFF1; color: #546E7A; }
 .status-pill.present { background: var(--success-light); color: var(--success); }
 .status-pill.missed { background: var(--danger-light); color: var(--danger); }
 
@@ -521,8 +524,8 @@ footer { padding: 4rem 2.5rem; text-align: center; border-top: 1px solid var(--b
       <h1 class="hero-h1" style="text-align:left; font-size: clamp(2rem, 5vw, 3.5rem); margin-bottom: 1rem;">Smart hospital<br>queuing <span>simplified.</span></h1>
       <p class="hero-p" style="text-align:left; margin-left:0; margin-bottom: 2rem;">Skip the waiting room. Track your position in real-time and get notified exactly when to leave your home.</p>
       <div class="hero-ctas" style="justify-content:flex-start;">
-        <button class="hero-btn primary" onclick="switchView('patient-login')">I'm a Patient</button>
-        <button class="hero-btn outline" onclick="switchView('hospital-login')">I'm a Doctor / Hospital Staff</button>
+        <button class="hero-btn primary" id="cta-patient" onclick="switchView('patient-login')">I'm a Patient</button>
+        <button class="hero-btn outline" id="cta-hospital" onclick="switchView('hospital-login')">I'm a Doctor / Hospital Staff</button>
         <button class="hero-btn outline" onclick="tryDemo()" style="border-color: var(--teal); color: var(--teal)">Try Demo</button>
       </div>
 
@@ -897,10 +900,24 @@ function switchView(v) {
   }
 
   if (v === 'hospital') loadQueue();
+
+  // Update URL without refresh
+  let path = '/';
+  if (v === 'patient-login') path = '/patient/login';
+  else if (v === 'patient-signup') path = '/patient/signup';
+  else if (v === 'hospital-login') path = '/hospital/login';
+  else if (v === 'patient') path = '/patient';
+  else if (v === 'hospital') path = '/hospital';
+
+  if (window.location.pathname !== path) {
+    window.history.pushState({}, '', path);
+  }
 }
 
 function checkAuth() {
   const user = JSON.parse(localStorage.getItem('mediqueue_user'));
+  const path = window.location.pathname;
+
   if (user) {
     if (user.role === 'patient') {
       patientId = user.id || user.phone;
@@ -909,7 +926,10 @@ function checkAuth() {
       switchView('hospital');
     }
   } else {
-    switchView('landing');
+    if (path === '/patient/login') switchView('patient-login');
+    else if (path === '/patient/signup') switchView('patient-signup');
+    else if (path === '/hospital/login') switchView('hospital-login');
+    else switchView('landing');
   }
 }
 
@@ -919,6 +939,10 @@ function handleAuth(role, type) {
     if (type === 'signup') {
       user.name = document.getElementById('ps-name').value;
       user.phone = document.getElementById('ps-phone').value;
+      user.age = document.getElementById('ps-age').value;
+      user.blood = document.getElementById('ps-blood').value;
+      user.conditions = document.getElementById('ps-cond').value;
+      user.email = document.getElementById('ps-email').value;
       user.id = 'P-' + Math.random().toString(36).substr(2, 6).toUpperCase();
     } else {
       user.phone = document.getElementById('pl-user').value;
@@ -928,6 +952,7 @@ function handleAuth(role, type) {
     switchView('patient');
   } else {
     user.hospital = document.getElementById('hl-name').value;
+    user.doctor = document.getElementById('hl-user').value;
     user.hospitalCode = document.getElementById('hl-code').value;
     localStorage.setItem('mediqueue_user', JSON.stringify(user));
     switchView('hospital');
