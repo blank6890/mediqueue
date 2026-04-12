@@ -650,8 +650,14 @@ footer { padding: 4rem 2.5rem; text-align: center; border-top: 1px solid var(--b
               <div class="screen-title">Select your appointment</div>
               <div class="field"><label>Hospital</label>
                 <select id="b-hospital">
-                  <option>Apollo Hospitals</option><option>Yashoda Hospitals</option>
-                  <option>KIMS Hospital</option><option>Care Hospital</option>
+                  <option>Apollo Clinic — Jubilee Hills</option>
+                  <option>Yashoda Hospital — Secunderabad</option>
+                  <option>NIMS Polyclinic — Punjagutta</option>
+                  <option>Care Hospital — Banjara Hills</option>
+                  <option>Sunshine Hospital — Gachibowli</option>
+                  <option>Medicover Hospital — HITEC City</option>
+                  <option>Rainbow Children's Hospital — Banjara Hills</option>
+                  <option>Gleneagles Global Hospital — LB Nagar</option>
                 </select>
               </div>
               <div class="field"><label>Doctor</label>
@@ -693,7 +699,26 @@ footer { padding: 4rem 2.5rem; text-align: center; border-top: 1px solid var(--b
             <div class="screen-body">
               <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:1rem">
                 <div class="field"><label>Dept</label>
-                  <select id="disc-dept" onchange="findNearbyHospitals()"><option value="">All</option><option>General OPD</option><option>Cardiology</option><option>Orthopaedics</option></select>
+                  <select id="disc-dept" onchange="findNearbyHospitals()">
+                    <option value="">All</option>
+                    <option>General OPD</option>
+                    <option>Cardiology</option>
+                    <option>Orthopaedics</option>
+                    <option>Dermatology</option>
+                    <option>Neurology</option>
+                    <option>Paediatrics</option>
+                    <option>ENT</option>
+                    <option>Gynaecology</option>
+                    <option>Ophthalmology</option>
+                    <option>Oncology</option>
+                    <option>Urology</option>
+                    <option>Physiotherapy</option>
+                    <option>Psychiatry</option>
+                    <option>Endocrinology</option>
+                    <option>Neonatology</option>
+                    <option>Nephrology</option>
+                    <option>Gastroenterology</option>
+                  </select>
                 </div>
                 <div class="field"><label>Time</label>
                   <select id="disc-time" onchange="findNearbyHospitals()"><option value="">Any</option><option value="morning">Morning</option><option value="afternoon">Afternoon</option><option value="evening">Evening</option></select>
@@ -882,7 +907,16 @@ function gotoScreen(n) {
 function nextScreen() { if (cur < TOTAL) gotoScreen(cur + 1); }
 function prevScreen() { if (cur > 1) gotoScreen(cur - 1); }
 
-function switchView(v) {
+const viewToPath = {
+  'landing': '/',
+  'patient-login': '/patient/login',
+  'patient-signup': '/patient/signup',
+  'hospital-login': '/hospital/login',
+  'patient': '/patient/dashboard',
+  'hospital': '/hospital/dashboard'
+};
+
+function switchView(v, push = true) {
   document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
   const target = document.getElementById('view-' + v);
   if (target) target.classList.add('active');
@@ -894,22 +928,47 @@ function switchView(v) {
   if (isDashboard) {
     document.getElementById('pill-patient').classList.toggle('active', v === 'patient');
     document.getElementById('pill-hospital').classList.toggle('active', v === 'hospital');
+
+    const user = JSON.parse(localStorage.getItem('mediqueue_user'));
+    if (user && user.role === 'hospital') {
+       document.querySelector('.dash-title').textContent = (user.hospital || "Apollo Hospitals") + " — OPD";
+       document.querySelector('.dash-sub').textContent = (user.user || "Dr. Priya Sharma") + " · Live Queue Management";
+    }
   }
 
   if (v === 'hospital') loadQueue();
+
+  if (push && viewToPath[v]) {
+    history.pushState({view: v}, '', viewToPath[v]);
+  }
 }
+
+window.addEventListener('popstate', (e) => {
+  if (e.state && e.state.view) {
+    switchView(e.state.view, false);
+  } else {
+    checkAuth();
+  }
+});
 
 function checkAuth() {
   const user = JSON.parse(localStorage.getItem('mediqueue_user'));
+  const path = window.location.pathname;
+
+  if (path === '/patient/login') return switchView('patient-login', false);
+  if (path === '/patient/signup') return switchView('patient-signup', false);
+  if (path === '/hospital/login') return switchView('hospital-login', false);
+
   if (user) {
     if (user.role === 'patient') {
       patientId = user.id || user.phone;
-      switchView('patient');
+      switchView('patient', false);
+      gotoScreen(2); // Skip profile creation
     } else if (user.role === 'hospital') {
-      switchView('hospital');
+      switchView('hospital', false);
     }
   } else {
-    switchView('landing');
+    switchView('landing', false);
   }
 }
 
@@ -918,17 +977,26 @@ function handleAuth(role, type) {
   if (role === 'patient') {
     if (type === 'signup') {
       user.name = document.getElementById('ps-name').value;
+      user.age = document.getElementById('ps-age').value;
+      user.blood = document.getElementById('ps-blood').value;
+      user.conditions = document.getElementById('ps-cond').value;
       user.phone = document.getElementById('ps-phone').value;
+      user.email = document.getElementById('ps-email').value;
+      user.password = document.getElementById('ps-pass').value;
       user.id = 'P-' + Math.random().toString(36).substr(2, 6).toUpperCase();
     } else {
-      user.phone = document.getElementById('pl-user').value;
+      user.user = document.getElementById('pl-user').value;
+      user.password = document.getElementById('pl-pass').value;
     }
-    patientId = user.id || user.phone;
+    patientId = user.id || user.phone || user.user;
     localStorage.setItem('mediqueue_user', JSON.stringify(user));
     switchView('patient');
+    gotoScreen(2);
   } else {
     user.hospital = document.getElementById('hl-name').value;
+    user.user = document.getElementById('hl-user').value;
     user.hospitalCode = document.getElementById('hl-code').value;
+    user.password = document.getElementById('hl-pass').value;
     localStorage.setItem('mediqueue_user', JSON.stringify(user));
     switchView('hospital');
   }
@@ -1049,9 +1117,6 @@ function tryDemo() {
   localStorage.setItem('mediqueue_user', JSON.stringify(demoUser));
   patientId = demoUser.id;
   switchView('patient');
-  // Fill some demo data
-  document.getElementById('p-name').value = demoUser.name;
-  document.getElementById('p-phone').value = demoUser.phone;
 
   // Set demo queue tracking state
   document.getElementById('live-pos').textContent = '3';
@@ -1198,9 +1263,9 @@ async function triggerCascade() {
 
   const div = document.getElementById('cascade-result');
   const demoResults = [
-    { name: "Ravi Kumar", bookingId: "MQ-2847", distance: "0.4 km", status: "notified", eta: "~5 min" },
-    { name: "Sunita Devi", bookingId: "MQ-1193", distance: "1.1 km", status: "pending", eta: "~12 min" },
-    { name: "Arjun Reddy", bookingId: "MQ-3305", distance: "2.3 km", status: "standby", eta: "~20 min" }
+    { name: "Ravi Kumar", bookingId: "MQ-2847", distance: "0.4 km", status: "notified", label: "Notified", eta: "~5 min" },
+    { name: "Sunita Devi", bookingId: "MQ-1193", distance: "1.1 km", status: "pending", label: "Pending", eta: "~12 min" },
+    { name: "Arjun Reddy", bookingId: "MQ-3305", distance: "2.3 km", status: "standby", label: "Standby", eta: "~20 min" }
   ];
 
   div.innerHTML = demoResults.map((p,i) => `
@@ -1210,7 +1275,7 @@ async function triggerCascade() {
           <div class="cascade-rank">${i+1}</div>
           <span style="font-weight:700">${p.name}</span>
         </div>
-        <span class="badge-demo ${p.status}">${p.status}</span>
+        <span class="badge-demo ${p.status}">${p.label}</span>
       </div>
       <div style="display:flex; justify-content:space-between; width:100%; font-size:0.75rem; color:var(--muted)">
         <span>ID: ${p.bookingId} • ${p.distance}</span>
