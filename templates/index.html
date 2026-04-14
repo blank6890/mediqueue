@@ -329,6 +329,7 @@ nav {
   text-transform: uppercase; letter-spacing: 0.4px;
 }
 .status-pill.booked { background: var(--teal-3); color: var(--teal); }
+.status-pill.notified { background: var(--teal-3); color: var(--teal); }
 .status-pill.present { background: var(--success-light); color: var(--success); }
 .status-pill.missed { background: var(--danger-light); color: var(--danger); }
 
@@ -882,7 +883,7 @@ function gotoScreen(n) {
 function nextScreen() { if (cur < TOTAL) gotoScreen(cur + 1); }
 function prevScreen() { if (cur > 1) gotoScreen(cur - 1); }
 
-function switchView(v) {
+function switchView(v, updateUrl = true) {
   document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
   const target = document.getElementById('view-' + v);
   if (target) target.classList.add('active');
@@ -897,7 +898,55 @@ function switchView(v) {
   }
 
   if (v === 'hospital') loadQueue();
+
+  if (updateUrl) {
+    let path = '/';
+    if (v === 'patient-login') path = '/patient/login';
+    else if (v === 'patient-signup') path = '/patient/signup';
+    else if (v === 'hospital-login') path = '/hospital/login';
+    else if (v === 'patient') path = '/patient/dashboard';
+    else if (v === 'hospital') path = '/hospital/dashboard';
+
+    if (window.location.pathname !== path) {
+      history.pushState({view: v}, '', path);
+    }
+  }
 }
+
+function handleRouting() {
+  const path = window.location.pathname;
+  const user = JSON.parse(localStorage.getItem('mediqueue_user'));
+
+  if (path === '/patient/login') switchView('patient-login', false);
+  else if (path === '/patient/signup') switchView('patient-signup', false);
+  else if (path === '/hospital/login') switchView('hospital-login', false);
+  else if (path === '/patient/dashboard') {
+    if (user && user.role === 'patient') {
+      patientId = user.id || user.phone;
+      switchView('patient', false);
+    } else {
+      switchView('patient-login', false);
+    }
+  }
+  else if (path === '/hospital/dashboard') {
+    if (user && user.role === 'hospital') {
+      switchView('hospital', false);
+    } else {
+      switchView('hospital-login', false);
+    }
+  }
+  else {
+    checkAuth();
+  }
+}
+
+window.onpopstate = function(event) {
+  if (event.state && event.state.view) {
+    switchView(event.state.view, false);
+  } else {
+    handleRouting();
+  }
+};
 
 function checkAuth() {
   const user = JSON.parse(localStorage.getItem('mediqueue_user'));
@@ -1229,7 +1278,7 @@ async function triggerCascade() {
 }
 
 buildTrack();
-checkAuth();
+handleRouting();
 </script>
 </body>
 </html>
