@@ -329,6 +329,7 @@ nav {
   text-transform: uppercase; letter-spacing: 0.4px;
 }
 .status-pill.booked { background: var(--teal-3); color: var(--teal); }
+.status-pill.notified { background: var(--teal-3); color: var(--teal); }
 .status-pill.present { background: var(--success-light); color: var(--success); }
 .status-pill.missed { background: var(--danger-light); color: var(--danger); }
 
@@ -860,6 +861,15 @@ let cur = 1;
 let patientId = null;
 let bookingId = null;
 
+const routes = {
+  '/': 'landing',
+  '/patient/login': 'patient-login',
+  '/patient/signup': 'patient-signup',
+  '/hospital/login': 'hospital-login',
+  '/patient/dashboard': 'patient',
+  '/hospital/dashboard': 'hospital'
+};
+
 function buildTrack() {
   const t = document.getElementById('step-track');
   if (!t) return;
@@ -882,7 +892,7 @@ function gotoScreen(n) {
 function nextScreen() { if (cur < TOTAL) gotoScreen(cur + 1); }
 function prevScreen() { if (cur > 1) gotoScreen(cur - 1); }
 
-function switchView(v) {
+function switchView(v, updateHistory = true) {
   document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
   const target = document.getElementById('view-' + v);
   if (target) target.classList.add('active');
@@ -897,20 +907,46 @@ function switchView(v) {
   }
 
   if (v === 'hospital') loadQueue();
+
+  if (updateHistory) {
+    const path = Object.keys(routes).find(key => routes[key] === v);
+    if (path) history.pushState(null, null, path);
+  }
 }
 
-function checkAuth() {
+function router() {
+  const path = window.location.pathname;
+  const view = routes[path] || 'landing';
+
   const user = JSON.parse(localStorage.getItem('mediqueue_user'));
   if (user) {
-    if (user.role === 'patient') {
-      patientId = user.id || user.phone;
+    if (user.role === 'patient') patientId = user.id || user.phone;
+    // Basic protection: if logged in as patient, don't allow hospital dashboard and vice versa
+    if (user.role === 'patient' && path === '/hospital/dashboard') {
       switchView('patient');
-    } else if (user.role === 'hospital') {
-      switchView('hospital');
+      return;
     }
+    if (user.role === 'hospital' && path === '/patient/dashboard') {
+      switchView('hospital');
+      return;
+    }
+    switchView(view, false);
   } else {
-    switchView('landing');
+    // If not logged in and trying to access dashboard, redirect to login
+    if (path === '/patient/dashboard') {
+      switchView('patient-login');
+    } else if (path === '/hospital/dashboard') {
+      switchView('hospital-login');
+    } else {
+      switchView(view, false);
+    }
   }
+}
+
+window.addEventListener('popstate', router);
+
+function checkAuth() {
+  router();
 }
 
 function handleAuth(role, type) {
@@ -918,17 +954,33 @@ function handleAuth(role, type) {
   if (role === 'patient') {
     if (type === 'signup') {
       user.name = document.getElementById('ps-name').value;
+      user.age = document.getElementById('ps-age').value;
+      user.bloodGroup = document.getElementById('ps-blood').value;
+      user.conditions = document.getElementById('ps-cond').value;
       user.phone = document.getElementById('ps-phone').value;
+      user.email = document.getElementById('ps-email').value;
       user.id = 'P-' + Math.random().toString(36).substr(2, 6).toUpperCase();
     } else {
       user.phone = document.getElementById('pl-user').value;
+      // In a real app, we'd fetch the user profile from the DB here
+      user.name = user.name || "Demo Patient";
     }
     patientId = user.id || user.phone;
     localStorage.setItem('mediqueue_user', JSON.stringify(user));
     switchView('patient');
+    // If patient already has a name, skip registration screen
+    if (user.name && user.name !== "Demo Patient") {
+      document.getElementById('p-name').value = user.name;
+      document.getElementById('p-phone').value = user.phone;
+      if (user.age) document.getElementById('p-age').value = user.age;
+      if (user.bloodGroup) document.getElementById('p-blood').value = user.bloodGroup;
+      if (user.conditions) document.getElementById('p-conditions').value = user.conditions;
+      gotoScreen(2);
+    }
   } else {
     user.hospital = document.getElementById('hl-name').value;
     user.hospitalCode = document.getElementById('hl-code').value;
+    user.doctorId = document.getElementById('hl-user').value;
     localStorage.setItem('mediqueue_user', JSON.stringify(user));
     switchView('hospital');
   }
@@ -936,7 +988,7 @@ function handleAuth(role, type) {
 
 function logout() {
   localStorage.removeItem('mediqueue_user');
-  location.reload();
+  window.location.href = '/';
 }
 
 function haversine(lat1, lon1, lat2, lon2) {
