@@ -918,16 +918,23 @@ function handleAuth(role, type) {
   if (role === 'patient') {
     if (type === 'signup') {
       user.name = document.getElementById('ps-name').value;
+      user.age = document.getElementById('ps-age').value;
+      user.bloodGroup = document.getElementById('ps-blood').value;
+      user.conditions = document.getElementById('ps-cond').value;
       user.phone = document.getElementById('ps-phone').value;
+      user.email = document.getElementById('ps-email').value;
       user.id = 'P-' + Math.random().toString(36).substr(2, 6).toUpperCase();
     } else {
-      user.phone = document.getElementById('pl-user').value;
+      const loginVal = document.getElementById('pl-user').value;
+      if (loginVal.includes('@')) user.email = loginVal;
+      else user.phone = loginVal;
     }
-    patientId = user.id || user.phone;
+    patientId = user.id || user.phone || user.email;
     localStorage.setItem('mediqueue_user', JSON.stringify(user));
     switchView('patient');
   } else {
     user.hospital = document.getElementById('hl-name').value;
+    user.doctorId = document.getElementById('hl-user').value;
     user.hospitalCode = document.getElementById('hl-code').value;
     localStorage.setItem('mediqueue_user', JSON.stringify(user));
     switchView('hospital');
