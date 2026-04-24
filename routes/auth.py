@@ -103,3 +103,74 @@ def get_user(phone, role):
         return jsonify({"error": "User not found"}), 404
     user['id'] = user.pop('_id')
     return jsonify(user)
+
+@auth_bp.route('/api/patient/signup', methods=['POST'])
+def patient_signup():
+    body = request.get_json()
+    required = ['name', 'age', 'blood_group', 'phone', 'email', 'password']
+    for f in required:
+        if f not in body:
+            return jsonify({"error": f"Missing {f}"}), 400
+
+    db = get_db()
+    if db.patients.find_one({"$or": [{"email": body['email']}, {"phone": body['phone']}]}):
+        return jsonify({"error": "User already exists"}), 400
+
+    import uuid
+    patient_id = "P-" + str(uuid.uuid4())[:6].upper()
+    patient = {
+        "_id": patient_id,
+        "name": body['name'],
+        "age": body['age'],
+        "blood_group": body['blood_group'],
+        "conditions": body.get('conditions', ''),
+        "phone": body['phone'],
+        "email": body['email'],
+        "password": body['password'],
+        "created_at": time.time()
+    }
+    db.patients.insert_one(patient)
+    return jsonify({"message": "Signup successful", "user": {"id": patient_id, "name": body['name'], "role": "patient"}})
+
+@auth_bp.route('/api/patient/login', methods=['POST'])
+def patient_login():
+    body = request.get_json()
+    identifier = body.get('identifier') # email or phone
+    password = body.get('password')
+
+    if not identifier or not password:
+        return jsonify({"error": "Credentials required"}), 400
+
+    db = get_db()
+    user = db.patients.find_one({
+        "$or": [{"email": identifier}, {"phone": identifier}],
+        "password": password
+    })
+
+    if not user:
+        return jsonify({"error": "Invalid credentials"}), 401
+
+    return jsonify({"message": "Login successful", "user": {"id": user['_id'], "name": user['name'], "role": "patient"}})
+
+@auth_bp.route('/api/hospital/login', methods=['POST'])
+def hospital_login():
+    body = request.get_json()
+    # Hospital Name, Doctor ID or Email, Password, Hospital Code
+    h_name = body.get('hospital_name')
+    identifier = body.get('identifier')
+    password = body.get('password')
+    h_code = body.get('hospital_code')
+
+    if not all([h_name, identifier, password, h_code]):
+        return jsonify({"error": "All fields are required"}), 400
+
+    # Mock hospital login for prototype
+    return jsonify({
+        "message": "Hospital login successful",
+        "user": {
+            "name": identifier,
+            "hospital": h_name,
+            "hospital_code": h_code,
+            "role": "hospital"
+        }
+    })
