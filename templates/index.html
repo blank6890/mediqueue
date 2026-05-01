@@ -882,7 +882,16 @@ function gotoScreen(n) {
 function nextScreen() { if (cur < TOTAL) gotoScreen(cur + 1); }
 function prevScreen() { if (cur > 1) gotoScreen(cur - 1); }
 
-function switchView(v) {
+const routes = {
+  'landing': '/',
+  'patient-login': '/patient/login',
+  'patient-signup': '/patient/signup',
+  'hospital-login': '/hospital/login',
+  'patient': '/patient/dashboard',
+  'hospital': '/hospital/dashboard'
+};
+
+function switchView(v, updateHistory = true) {
   document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
   const target = document.getElementById('view-' + v);
   if (target) target.classList.add('active');
@@ -897,19 +906,50 @@ function switchView(v) {
   }
 
   if (v === 'hospital') loadQueue();
+
+  if (updateHistory && routes[v]) {
+    history.pushState({view: v}, '', routes[v]);
+  }
+}
+
+window.onpopstate = function(event) {
+  if (event.state && event.state.view) {
+    switchView(event.state.view, false);
+  } else {
+    routeByPath(window.location.pathname);
+  }
+};
+
+function routeByPath(path) {
+  if (path === '/patient/login') switchView('patient-login', false);
+  else if (path === '/patient/signup') switchView('patient-signup', false);
+  else if (path === '/hospital/login') switchView('hospital-login', false);
+  else if (path === '/patient/dashboard') switchView('patient', false);
+  else if (path === '/hospital/dashboard') switchView('hospital', false);
+  else switchView('landing', false);
 }
 
 function checkAuth() {
   const user = JSON.parse(localStorage.getItem('mediqueue_user'));
+  const path = window.location.pathname;
+
   if (user) {
     if (user.role === 'patient') {
       patientId = user.id || user.phone;
-      switchView('patient');
+      if (path === '/' || path === '' || path.includes('login') || path.includes('signup')) {
+        switchView('patient');
+      } else {
+        routeByPath(path);
+      }
     } else if (user.role === 'hospital') {
-      switchView('hospital');
+      if (path === '/' || path === '' || path.includes('login')) {
+        switchView('hospital');
+      } else {
+        routeByPath(path);
+      }
     }
   } else {
-    switchView('landing');
+    routeByPath(path);
   }
 }
 
@@ -918,17 +958,25 @@ function handleAuth(role, type) {
   if (role === 'patient') {
     if (type === 'signup') {
       user.name = document.getElementById('ps-name').value;
+      user.age = document.getElementById('ps-age').value;
+      user.bloodGroup = document.getElementById('ps-blood').value;
+      user.conditions = document.getElementById('ps-cond').value;
       user.phone = document.getElementById('ps-phone').value;
+      user.email = document.getElementById('ps-email').value;
+      user.password = document.getElementById('ps-pass').value;
       user.id = 'P-' + Math.random().toString(36).substr(2, 6).toUpperCase();
     } else {
-      user.phone = document.getElementById('pl-user').value;
+      user.identifier = document.getElementById('pl-user').value;
+      user.password = document.getElementById('pl-pass').value;
     }
-    patientId = user.id || user.phone;
+    patientId = user.id || user.phone || user.identifier;
     localStorage.setItem('mediqueue_user', JSON.stringify(user));
     switchView('patient');
   } else {
     user.hospital = document.getElementById('hl-name').value;
+    user.doctorInfo = document.getElementById('hl-user').value;
     user.hospitalCode = document.getElementById('hl-code').value;
+    user.password = document.getElementById('hl-pass').value;
     localStorage.setItem('mediqueue_user', JSON.stringify(user));
     switchView('hospital');
   }
@@ -995,7 +1043,7 @@ async function findNearbyHospitals() {
         list.innerHTML = '<div style="text-align:center; padding:2rem; color:var(--muted)">No hospitals found matching your criteria.</div>';
       } else {
         list.innerHTML = results.map(h => `
-          <div class="hospital-card" onclick="preFillBooking('${h.name}')">
+          <div class="hospital-card" onclick="preFillBooking('${h.name}', '${h.departments[0]}', '${h.availableSlots[0]}')">
             <div class="h-top">
               <div class="h-name">${h.name}</div>
               <div class="h-dist">${h.distance.toFixed(1)} km</div>
@@ -1018,7 +1066,7 @@ async function findNearbyHospitals() {
   });
 }
 
-function preFillBooking(hName) {
+function preFillBooking(hName, dept, slot) {
   const select = document.getElementById('b-hospital');
   // Add option if not exists
   let exists = false;
@@ -1036,6 +1084,26 @@ function preFillBooking(hName) {
     select.add(opt);
     select.value = hName;
   }
+
+  if (slot) {
+    const slotSelect = document.getElementById('b-time');
+    let sExists = false;
+    for (let i = 0; i < slotSelect.options.length; i++) {
+      if (slotSelect.options[i].text === slot) {
+        slotSelect.selectedIndex = i;
+        sExists = true;
+        break;
+      }
+    }
+    if (!sExists) {
+      const opt = document.createElement('option');
+      opt.text = slot;
+      opt.value = slot;
+      slotSelect.add(opt);
+      slotSelect.value = slot;
+    }
+  }
+
   gotoScreen(2);
 }
 

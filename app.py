@@ -19,11 +19,12 @@ app.register_blueprint(cascade_bp)
 app.register_blueprint(hospitals_bp)
 app.register_blueprint(auth_bp)
 
-@app.route('/')
-def home():
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def home(path):
     return render_template('index.html')
 
-@app.route('/api')
+@app.route('/api/status')
 def api_status():
     return {
         "message": "MediQueue API is running!",
