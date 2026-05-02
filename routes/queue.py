@@ -58,7 +58,7 @@ def get_queue():
     db = get_db()
     active = list(db.queue.find({"status": {"$in": ["booked", "present", "missed"]}}))
     for item in active:
-        item['booking_id'] = item.pop('_id')
+        item['booking_id'] = str(item.pop('_id'))
     return jsonify({"total_in_queue": len(active), "queue": active})
 
 
@@ -73,6 +73,7 @@ def update_status():
         return jsonify({"error": f"Status must be one of: {allowed}"}), 400
 
     db = get_db()
+    # Try updating with direct booking_id (might be string or ObjectId)
     result = db.queue.update_one({"_id": booking_id}, {"$set": {"status": new_status}})
 
     if result.matched_count == 0:
