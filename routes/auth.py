@@ -101,5 +101,111 @@ def get_user(phone, role):
     user = db.users.find_one({"phone": phone, "role": role})
     if not user:
         return jsonify({"error": "User not found"}), 404
-    user['id'] = user.pop('_id')
+    user['id'] = str(user.pop('_id'))
     return jsonify(user)
+
+@auth_bp.route('/api/patient/signup', methods=['POST'])
+def patient_signup():
+    db = get_db()
+    data = request.json
+    required = ['name', 'age', 'blood_group', 'phone', 'email', 'password']
+    for field in required:
+        if field not in data:
+            return jsonify({"error": f"Missing field: {field}"}), 400
+
+    if db.users.find_one({"$or": [{"email": data['email']}, {"phone": data['phone']}], "role": "patient"}):
+        return jsonify({"error": "Patient with this email or phone already exists"}), 400
+
+    user = {
+        "name": data['name'],
+        "age": data['age'],
+        "blood_group": data['blood_group'],
+        "conditions": data.get('conditions', ''),
+        "phone": data['phone'],
+        "email": data['email'],
+        "password": data['password'],
+        "role": "patient",
+        "created_at": time.time()
+    }
+    result = db.users.insert_one(user)
+
+    # Also register as a patient in the patients collection for backward compatibility
+    patient = {
+        "_id": str(result.inserted_id)[:8],
+        "name": data['name'],
+        "age": data['age'],
+        "blood_group": data['blood_group'],
+        "conditions": data.get('conditions', ''),
+        "phone": data['phone'],
+        "lat": 17.3850,
+        "lng": 78.4867
+    }
+    db.patients.insert_one(patient)
+
+    user['id'] = str(result.inserted_id)
+    del user['_id']
+    del user['password']
+
+    return jsonify({"message": "Signup successful", "user": user}), 201
+
+@auth_bp.route('/api/patient/login', methods=['POST'])
+def patient_login():
+    db = get_db()
+    data = request.json
+    identifier = data.get('identifier')
+    password = data.get('password')
+
+    if not identifier or not password:
+        return jsonify({"error": "Identifier and password required"}), 400
+
+    user = db.users.find_one({
+        "$or": [{"email": identifier}, {"phone": identifier}],
+        "password": password,
+        "role": "patient"
+    })
+
+    if not user:
+        return jsonify({"error": "Invalid credentials"}), 401
+
+    user['id'] = str(user.pop('_id'))
+    del user['password']
+    return jsonify({"message": "Login successful", "user": user})
+
+@auth_bp.route('/api/hospital/login', methods=['POST'])
+def hospital_login():
+    db = get_db()
+    data = request.json
+    hospital_name = data.get('hospital_name')
+    doctor_id = data.get('doctor_id')
+    password = data.get('password')
+    hospital_code = data.get('hospital_code')
+
+    if not all([hospital_name, doctor_id, password, hospital_code]):
+        return jsonify({"error": "All fields are required"}), 400
+
+    user = db.users.find_one({
+        "hospital_name": hospital_name,
+        "$or": [{"doctor_id": doctor_id}, {"email": doctor_id}],
+        "password": password,
+        "hospital_code": hospital_code,
+        "role": "hospital"
+    })
+
+    # For prototype, if no hospital user exists, we can allow a demo one or create it
+    if not user:
+        if password == "admin123": # Simple hardcoded password for prototype demo
+             user = {
+                "hospital_name": hospital_name,
+                "doctor_id": doctor_id,
+                "hospital_code": hospital_code,
+                "role": "hospital",
+                "name": doctor_id
+             }
+             # Do not save to DB, just return as successful login for prototype
+             user['id'] = "HOSP_DEMO_ID"
+             return jsonify({"message": "Login successful (Demo)", "user": user})
+        return jsonify({"error": "Invalid credentials"}), 401
+
+    user['id'] = str(user.pop('_id'))
+    del user['password']
+    return jsonify({"message": "Login successful", "user": user})
