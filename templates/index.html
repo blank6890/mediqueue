@@ -328,7 +328,7 @@ nav {
   font-size: 0.7rem; font-weight: 700; text-align: center;
   text-transform: uppercase; letter-spacing: 0.4px;
 }
-.status-pill.booked { background: var(--teal-3); color: var(--teal); }
+.status-pill.booked { background: var(--teal); color: white; }
 .status-pill.present { background: var(--success-light); color: var(--success); }
 .status-pill.missed { background: var(--danger-light); color: var(--danger); }
 
@@ -899,38 +899,121 @@ function switchView(v) {
   if (v === 'hospital') loadQueue();
 }
 
-function checkAuth() {
+function handleRoute() {
+  const path = window.location.pathname;
   const user = JSON.parse(localStorage.getItem('mediqueue_user'));
-  if (user) {
-    if (user.role === 'patient') {
-      patientId = user.id || user.phone;
-      switchView('patient');
-    } else if (user.role === 'hospital') {
-      switchView('hospital');
+
+  if (path === '/' || path === '/index.html') {
+    switchView('landing', false);
+  } else if (path === '/patient/login') {
+    switchView('patient-login', false);
+  } else if (path === '/patient/signup') {
+    switchView('patient-signup', false);
+  } else if (path === '/hospital/login') {
+    switchView('hospital-login', false);
+  } else if (path === '/patient/dashboard') {
+    if (!user || user.role !== 'patient') {
+      navigateTo('/patient/login');
+    } else {
+      patientId = user.id;
+      switchView('patient', false);
     }
-  } else {
-    switchView('landing');
+  } else if (path === '/hospital/dashboard') {
+    if (!user || user.role !== 'hospital') {
+      navigateTo('/hospital/login');
+    } else {
+      switchView('hospital', false);
+    }
   }
 }
 
-function handleAuth(role, type) {
-  let user = { role };
+function navigateTo(path) {
+  window.history.pushState({}, "", path);
+  handleRoute();
+}
+
+window.onpopstate = handleRoute;
+
+function switchView(v, updateURL = true) {
+  if (updateURL) {
+    let path = '/';
+    if (v === 'patient-login') path = '/patient/login';
+    else if (v === 'patient-signup') path = '/patient/signup';
+    else if (v === 'hospital-login') path = '/hospital/login';
+    else if (v === 'patient') path = '/patient/dashboard';
+    else if (v === 'hospital') path = '/hospital/dashboard';
+    window.history.pushState({}, "", path);
+  }
+
+  document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+  const target = document.getElementById('view-' + v);
+  if (target) target.classList.add('active');
+
+  const nav = document.getElementById('main-nav');
+  const isDashboard = ['patient', 'hospital'].includes(v);
+  nav.style.display = isDashboard ? 'flex' : 'none';
+
+  if (isDashboard) {
+    document.getElementById('pill-patient').classList.toggle('active', v === 'patient');
+    document.getElementById('pill-hospital').classList.toggle('active', v === 'hospital');
+  }
+
+  if (v === 'hospital') loadQueue();
+}
+
+async function handleAuth(role, type) {
+  let payload = {};
+  let endpoint = '';
+
   if (role === 'patient') {
     if (type === 'signup') {
-      user.name = document.getElementById('ps-name').value;
-      user.phone = document.getElementById('ps-phone').value;
-      user.id = 'P-' + Math.random().toString(36).substr(2, 6).toUpperCase();
+      endpoint = '/api/patient/signup';
+      payload = {
+        name: document.getElementById('ps-name').value,
+        age: parseInt(document.getElementById('ps-age').value),
+        blood_group: document.getElementById('ps-blood').value,
+        chronic_conditions: document.getElementById('ps-cond').value,
+        phone: document.getElementById('ps-phone').value,
+        email: document.getElementById('ps-email').value,
+        password: document.getElementById('ps-pass').value
+      };
     } else {
-      user.phone = document.getElementById('pl-user').value;
+      endpoint = '/api/patient/login';
+      payload = {
+        identifier: document.getElementById('pl-user').value,
+        password: document.getElementById('pl-pass').value
+      };
     }
-    patientId = user.id || user.phone;
-    localStorage.setItem('mediqueue_user', JSON.stringify(user));
-    switchView('patient');
   } else {
-    user.hospital = document.getElementById('hl-name').value;
-    user.hospitalCode = document.getElementById('hl-code').value;
-    localStorage.setItem('mediqueue_user', JSON.stringify(user));
-    switchView('hospital');
+    endpoint = '/api/hospital/login';
+    payload = {
+      hospital_name: document.getElementById('hl-name').value,
+      identifier: document.getElementById('hl-user').value,
+      hospital_code: document.getElementById('hl-code').value,
+      password: document.getElementById('hl-pass').value
+    };
+  }
+
+  try {
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (data.user) {
+      localStorage.setItem('mediqueue_user', JSON.stringify(data.user));
+      if (data.user.role === 'patient') {
+        patientId = data.user.id;
+        switchView('patient');
+      } else {
+        switchView('hospital');
+      }
+    } else {
+      alert(data.error || 'Authentication failed');
+    }
+  } catch (e) {
+    alert('Server error. Please check if backend is running.');
   }
 }
 
@@ -956,6 +1039,13 @@ async function findNearbyHospitals() {
   btn.disabled = true;
   btn.innerHTML = '<span class="spin"></span> Finding...';
   list.innerHTML = '<div style="text-align:center; padding:2rem;"><span class="spin" style="border-top-color:var(--teal)"></span> Finding hospitals near you...</div>';
+
+  if (!navigator.geolocation) {
+    list.innerHTML = '<div style="text-align:center; padding:2rem; color:var(--danger)">Geolocation is not supported by your browser.</div>';
+    btn.disabled = false;
+    btn.innerHTML = 'Search Nearby 🔎';
+    return;
+  }
 
   navigator.geolocation.getCurrentPosition(async (pos) => {
     const lat = pos.coords.latitude;
@@ -1150,20 +1240,21 @@ async function loadQueue() {
     const data = await res.json();
     const q = data.queue;
     document.getElementById('kpi-total').textContent = data.total_in_queue;
-    document.getElementById('kpi-booked').textContent = q.filter(b=>b.status==='booked').length;
-    document.getElementById('kpi-present').textContent = q.filter(b=>b.status==='present').length;
-    document.getElementById('kpi-missed').textContent = q.filter(b=>b.status==='missed').length;
+    document.getElementById('kpi-booked').textContent = q.filter(b=>b.status.toLowerCase()==='booked').length;
+    document.getElementById('kpi-present').textContent = q.filter(b=>b.status.toLowerCase()==='present').length;
+    document.getElementById('kpi-missed').textContent = q.filter(b=>b.status.toLowerCase()==='missed').length;
 
     const list = document.getElementById('queue-list');
     if (!q.length) { list.innerHTML = '<div style="padding:2rem;text-align:center;color:var(--muted);font-size:0.88rem">No patients in queue yet — register and book a slot using the Patient App!</div>'; return; }
     list.innerHTML = q.map((b,i) => {
-      const cls = b.status==='present'?'is-present':b.status==='missed'?'is-missed':'';
+      const s = b.status.toLowerCase();
+      const cls = s==='present'?'is-present':s==='missed'?'is-missed':'';
       const initials = b.patient_name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
       return `<div class="q-row ${cls}">
         <div class="q-avatar">${initials}</div>
         <div><div class="q-name">${b.patient_name}</div><div class="q-id">${b.booking_id}</div></div>
         <div class="q-time">${b.slot_time}</div>
-        <div class="status-pill ${b.status}">${b.status}</div>
+        <div class="status-pill ${s}">${b.status}</div>
       </div>`;
     }).join('');
   } catch(e) {
@@ -1229,7 +1320,7 @@ async function triggerCascade() {
 }
 
 buildTrack();
-checkAuth();
+handleRoute();
 </script>
 </body>
 </html>
