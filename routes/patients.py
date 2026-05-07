@@ -8,7 +8,7 @@ patients_bp = Blueprint('patients', __name__)
 def register_patient():
     body = request.get_json()
 
-    required = ['name', 'age', 'blood_group']
+    required = ['name', 'age', 'blood_group', 'phone', 'email', 'password']
     for field in required:
         if field not in body:
             return jsonify({"error": f"Missing field: {field}"}), 400
@@ -20,7 +20,10 @@ def register_patient():
         "age": body['age'],
         "blood_group": body['blood_group'],
         "conditions": body.get('conditions', ''),
-        "phone": body.get('phone', ''),
+        "chronic_conditions": body.get('chronic_conditions', ''),
+        "phone": body['phone'],
+        "email": body['email'],
+        "password": body['password'],
         "lat": body.get('lat', 17.3850),
         "lng": body.get('lng', 78.4867)
     }
