@@ -95,11 +95,108 @@ def verify_otp():
     })
 
 
+@auth_bp.route('/api/patient/signup', methods=['POST'])
+def patient_signup():
+    body = request.get_json()
+    required = ['name', 'age', 'blood_group', 'phone', 'email', 'password']
+    for f in required:
+        if f not in body:
+            return jsonify({"error": f"Missing field: {f}"}), 400
+
+    db = get_db()
+    if db.users.find_one({"$or": [{"email": body['email']}, {"phone": body['phone']}], "role": "patient"}):
+        return jsonify({"error": "Patient already exists with this email or phone"}), 400
+
+    user_id = str(random.randint(1000, 9999))
+    user = {
+        "_id": "P-" + user_id,
+        "name": body['name'],
+        "age": body['age'],
+        "blood_group": body['blood_group'],
+        "conditions": body.get('chronic_conditions', ''),
+        "phone": body['phone'],
+        "email": body['email'],
+        "password": body['password'], # In prototype, we use plain text
+        "role": "patient",
+        "created_at": time.time()
+    }
+    db.users.insert_one(user)
+
+    # Also create a patient record for the booking system compatibility
+    db.patients.insert_one({
+        "_id": "P-" + user_id,
+        "name": body['name'],
+        "age": body['age'],
+        "blood_group": body['blood_group'],
+        "conditions": body.get('chronic_conditions', ''),
+        "phone": body['phone']
+    })
+
+    user['id'] = user.pop('_id')
+    user.pop('password')
+    return jsonify({"message": "Signup successful", "user": user}), 201
+
+@auth_bp.route('/api/patient/login', methods=['POST'])
+def patient_login():
+    body = request.get_json()
+    user_id = body.get('username') # email or phone
+    password = body.get('password')
+
+    if not user_id or not password:
+        return jsonify({"error": "Username and password required"}), 400
+
+    db = get_db()
+    user = db.users.find_one({
+        "$or": [{"email": user_id}, {"phone": user_id}],
+        "role": "patient"
+    })
+
+    if not user or user['password'] != password:
+        return jsonify({"error": "Invalid credentials"}), 401
+
+    user['id'] = user.pop('_id')
+    user.pop('password')
+    return jsonify({"message": "Login successful", "user": user})
+
+@auth_bp.route('/api/hospital/login', methods=['POST'])
+def hospital_login():
+    body = request.get_json()
+    h_name = body.get('hospital_name')
+    u_id = body.get('username') # doctor id or email
+    h_code = body.get('hospital_code')
+    password = body.get('password')
+
+    if not all([h_name, u_id, h_code, password]):
+        return jsonify({"error": "All fields are required"}), 400
+
+    # Prototype: allow any login for hospital if it matches a basic rule or just accept it
+    # But let's try to find if user exists or just mock it as requested
+    db = get_db()
+    user = db.users.find_one({"email": u_id, "role": "hospital"})
+
+    if not user:
+        # For prototype, if not exists, we can "auto-create" or just validate
+        # Let's just validate against a dummy check if not in DB
+        user = {
+            "id": u_id,
+            "name": h_name,
+            "hospital": h_name,
+            "hospital_code": h_code,
+            "role": "hospital"
+        }
+    else:
+        if user['password'] != password:
+            return jsonify({"error": "Invalid credentials"}), 401
+        user['id'] = user.pop('_id')
+        user.pop('password')
+
+    return jsonify({"message": "Hospital login successful", "user": user})
+
 @auth_bp.route('/get-user/<phone>/<role>', methods=['GET'])
 def get_user(phone, role):
     db = get_db()
     user = db.users.find_one({"phone": phone, "role": role})
     if not user:
         return jsonify({"error": "User not found"}), 404
-    user['id'] = user.pop('_id')
+    user['id'] = str(user.pop('_id'))
     return jsonify(user)

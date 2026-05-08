@@ -329,6 +329,7 @@ nav {
   text-transform: uppercase; letter-spacing: 0.4px;
 }
 .status-pill.booked { background: var(--teal-3); color: var(--teal); }
+.status-pill.notified { background: var(--teal-3); color: var(--teal); }
 .status-pill.present { background: var(--success-light); color: var(--success); }
 .status-pill.missed { background: var(--danger-light); color: var(--danger); }
 
@@ -882,7 +883,7 @@ function gotoScreen(n) {
 function nextScreen() { if (cur < TOTAL) gotoScreen(cur + 1); }
 function prevScreen() { if (cur > 1) gotoScreen(cur - 1); }
 
-function switchView(v) {
+function switchView(v, updateHistory = true) {
   document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
   const target = document.getElementById('view-' + v);
   if (target) target.classList.add('active');
@@ -897,40 +898,99 @@ function switchView(v) {
   }
 
   if (v === 'hospital') loadQueue();
-}
 
-function checkAuth() {
-  const user = JSON.parse(localStorage.getItem('mediqueue_user'));
-  if (user) {
-    if (user.role === 'patient') {
-      patientId = user.id || user.phone;
-      switchView('patient');
-    } else if (user.role === 'hospital') {
-      switchView('hospital');
-    }
-  } else {
-    switchView('landing');
+  if (updateHistory) {
+    let path = '/';
+    if (v === 'patient-login') path = '/patient/login';
+    else if (v === 'patient-signup') path = '/patient/signup';
+    else if (v === 'hospital-login') path = '/hospital/login';
+    else if (v === 'patient') path = '/patient/dashboard';
+    else if (v === 'hospital') path = '/hospital/dashboard';
+    history.pushState({ view: v }, '', path);
   }
 }
 
-function handleAuth(role, type) {
-  let user = { role };
+window.onpopstate = function(e) {
+  if (e.state && e.state.view) {
+    switchView(e.state.view, false);
+  } else {
+    checkAuth(false);
+  }
+};
+
+function checkAuth(updateHistory = true) {
+  const user = JSON.parse(localStorage.getItem('mediqueue_user'));
+  const path = window.location.pathname;
+
+  let viewName = 'landing';
+  if (path === '/patient/login') viewName = 'patient-login';
+  else if (path === '/patient/signup') viewName = 'patient-signup';
+  else if (path === '/hospital/login') viewName = 'hospital-login';
+
+  if (user) {
+    if (user.role === 'patient') {
+      patientId = user.id;
+      viewName = 'patient';
+    } else if (user.role === 'hospital') {
+      viewName = 'hospital';
+    }
+  }
+  switchView(viewName, updateHistory);
+}
+
+async function handleAuth(role, type) {
+  let body = {};
+  let endpoint = '';
+
   if (role === 'patient') {
     if (type === 'signup') {
-      user.name = document.getElementById('ps-name').value;
-      user.phone = document.getElementById('ps-phone').value;
-      user.id = 'P-' + Math.random().toString(36).substr(2, 6).toUpperCase();
+      endpoint = '/api/patient/signup';
+      body = {
+        name: document.getElementById('ps-name').value,
+        age: parseInt(document.getElementById('ps-age').value),
+        blood_group: document.getElementById('ps-blood').value,
+        chronic_conditions: document.getElementById('ps-cond').value,
+        phone: document.getElementById('ps-phone').value,
+        email: document.getElementById('ps-email').value,
+        password: document.getElementById('ps-pass').value
+      };
     } else {
-      user.phone = document.getElementById('pl-user').value;
+      endpoint = '/api/patient/login';
+      body = {
+        username: document.getElementById('pl-user').value,
+        password: document.getElementById('pl-pass').value
+      };
     }
-    patientId = user.id || user.phone;
-    localStorage.setItem('mediqueue_user', JSON.stringify(user));
-    switchView('patient');
   } else {
-    user.hospital = document.getElementById('hl-name').value;
-    user.hospitalCode = document.getElementById('hl-code').value;
-    localStorage.setItem('mediqueue_user', JSON.stringify(user));
-    switchView('hospital');
+    endpoint = '/api/hospital/login';
+    body = {
+      hospital_name: document.getElementById('hl-name').value,
+      username: document.getElementById('hl-user').value,
+      hospital_code: document.getElementById('hl-code').value,
+      password: document.getElementById('hl-pass').value
+    };
+  }
+
+  try {
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    if (data.user) {
+      localStorage.setItem('mediqueue_user', JSON.stringify(data.user));
+      if (data.user.role === 'patient') {
+        patientId = data.user.id;
+        switchView('patient');
+      } else {
+        switchView('hospital');
+      }
+    } else {
+      alert(data.error || 'Authentication failed');
+    }
+  } catch (e) {
+    alert('Server error connecting to ' + endpoint);
   }
 }
 
@@ -1048,10 +1108,6 @@ function tryDemo() {
   };
   localStorage.setItem('mediqueue_user', JSON.stringify(demoUser));
   patientId = demoUser.id;
-  switchView('patient');
-  // Fill some demo data
-  document.getElementById('p-name').value = demoUser.name;
-  document.getElementById('p-phone').value = demoUser.phone;
 
   // Set demo queue tracking state
   document.getElementById('live-pos').textContent = '3';
@@ -1060,6 +1116,7 @@ function tryDemo() {
   document.getElementById('live-slot').textContent = '10:30 AM';
   document.getElementById('live-total').textContent = '8 patients';
 
+  switchView('patient');
   gotoScreen(4); // Start at live queue tracking for demo
 }
 
@@ -1159,11 +1216,12 @@ async function loadQueue() {
     list.innerHTML = q.map((b,i) => {
       const cls = b.status==='present'?'is-present':b.status==='missed'?'is-missed':'';
       const initials = b.patient_name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+      const displayStatus = b.status.toLowerCase() === 'booked' ? 'BOOKED' : b.status;
       return `<div class="q-row ${cls}">
         <div class="q-avatar">${initials}</div>
         <div><div class="q-name">${b.patient_name}</div><div class="q-id">${b.booking_id}</div></div>
         <div class="q-time">${b.slot_time}</div>
-        <div class="status-pill ${b.status}">${b.status}</div>
+        <div class="status-pill ${b.status.toLowerCase()}">${displayStatus}</div>
       </div>`;
     }).join('');
   } catch(e) {
@@ -1198,9 +1256,9 @@ async function triggerCascade() {
 
   const div = document.getElementById('cascade-result');
   const demoResults = [
-    { name: "Ravi Kumar", bookingId: "MQ-2847", distance: "0.4 km", status: "notified", eta: "~5 min" },
-    { name: "Sunita Devi", bookingId: "MQ-1193", distance: "1.1 km", status: "pending", eta: "~12 min" },
-    { name: "Arjun Reddy", bookingId: "MQ-3305", distance: "2.3 km", status: "standby", eta: "~20 min" }
+    { name: "Ravi Kumar", bookingId: "MQ-2847", distance: "0.4 km", status: "Notified", eta: "~5 min" },
+    { name: "Sunita Devi", bookingId: "MQ-1193", distance: "1.1 km", status: "Pending", eta: "~12 min" },
+    { name: "Arjun Reddy", bookingId: "MQ-3305", distance: "2.3 km", status: "Standby", eta: "~20 min" }
   ];
 
   div.innerHTML = demoResults.map((p,i) => `
@@ -1210,7 +1268,7 @@ async function triggerCascade() {
           <div class="cascade-rank">${i+1}</div>
           <span style="font-weight:700">${p.name}</span>
         </div>
-        <span class="badge-demo ${p.status}">${p.status}</span>
+        <span class="badge-demo ${p.status.toLowerCase()}">${p.status}</span>
       </div>
       <div style="display:flex; justify-content:space-between; width:100%; font-size:0.75rem; color:var(--muted)">
         <span>ID: ${p.bookingId} • ${p.distance}</span>
