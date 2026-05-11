@@ -1,10 +1,8 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
+<!DOCTYPE html><html lang="en"><head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MediQueue — Smart Hospital Queue</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&amp;family=Instrument+Sans:wght@400;500;600&amp;display=swap" rel="stylesheet">
 <style>
 :root {
   --teal: #00897B; --teal-2: #00695C; --teal-3: #E0F2F1; --teal-4: #B2DFDB;
@@ -473,7 +471,7 @@ footer { padding: 4rem 2.5rem; text-align: center; border-top: 1px solid var(--b
 
 <script>const API = "";</script>
 
-<nav style="display:none" id="main-nav">
+<nav style="display: flex;" id="main-nav">
   <div class="logo"><div class="logo-dot"></div>MediQueue</div>
   <div style="display:flex; align-items:center; gap:2rem">
     <div class="nav-pills">
@@ -487,7 +485,7 @@ footer { padding: 4rem 2.5rem; text-align: center; border-top: 1px solid var(--b
 <!-- ════════════════════════════
      LANDING VIEW
 ════════════════════════════ -->
-<div class="view active" id="view-landing">
+<div class="view" id="view-landing">
   <div class="patient-layout">
     <div class="phone-side">
       <div class="phone">
@@ -552,8 +550,8 @@ footer { padding: 4rem 2.5rem; text-align: center; border-top: 1px solid var(--b
         <h2>Patient Login</h2>
         <p>Enter your credentials to access your dashboard</p>
       </div>
-      <div class="field"><label>Email or Phone</label><input type="text" id="pl-user" placeholder="Enter email or phone"/></div>
-      <div class="field"><label>Password</label><input type="password" id="pl-pass" placeholder="••••••••"/></div>
+      <div class="field"><label>Email or Phone</label><input type="text" id="pl-user" placeholder="Enter email or phone" style=""></div>
+      <div class="field"><label>Password</label><input type="password" id="pl-pass" placeholder="••••••••" style=""></div>
       <button class="cta" onclick="handleAuth('patient', 'login')">Login to MediQueue</button>
       <p style="text-align:center; font-size:0.85rem; margin-top:1.5rem; color:var(--muted)">
         New to MediQueue? <a href="javascript:void(0)" onclick="switchView('patient-signup')" style="color:var(--teal); font-weight:600; text-decoration:none">Create account</a>
@@ -573,17 +571,17 @@ footer { padding: 4rem 2.5rem; text-align: center; border-top: 1px solid var(--b
         <h2>Patient Signup</h2>
         <p>Join MediQueue for a seamless hospital experience</p>
       </div>
-      <div class="field"><label>Full Name</label><input type="text" id="ps-name" placeholder="John Doe"/></div>
+      <div class="field"><label>Full Name</label><input type="text" id="ps-name" placeholder="John Doe" style=""></div>
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px">
-        <div class="field"><label>Age</label><input type="number" id="ps-age" placeholder="25"/></div>
+        <div class="field"><label>Age</label><input type="number" id="ps-age" placeholder="25" style=""></div>
         <div class="field"><label>Blood Group</label>
           <select id="ps-blood"><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>O+</option><option>O-</option><option>AB+</option><option>AB-</option></select>
         </div>
       </div>
-      <div class="field"><label>Chronic Conditions</label><input type="text" id="ps-cond" placeholder="None, Diabetes, etc."/></div>
-      <div class="field"><label>Phone Number</label><input type="text" id="ps-phone" placeholder="10-digit number"/></div>
-      <div class="field"><label>Email</label><input type="email" id="ps-email" placeholder="john@example.com"/></div>
-      <div class="field"><label>Password</label><input type="password" id="ps-pass" placeholder="••••••••"/></div>
+      <div class="field"><label>Chronic Conditions</label><input type="text" id="ps-cond" placeholder="None, Diabetes, etc." style=""></div>
+      <div class="field"><label>Phone Number</label><input type="text" id="ps-phone" placeholder="10-digit number" style=""></div>
+      <div class="field"><label>Email</label><input type="email" id="ps-email" placeholder="john@example.com" style=""></div>
+      <div class="field"><label>Password</label><input type="password" id="ps-pass" placeholder="••••••••" style=""></div>
       <button class="cta" onclick="handleAuth('patient', 'signup')">Create Account</button>
     </div>
   </div>
@@ -600,10 +598,10 @@ footer { padding: 4rem 2.5rem; text-align: center; border-top: 1px solid var(--b
         <h2>Hospital Portal</h2>
         <p>Access your live queue and management tools</p>
       </div>
-      <div class="field"><label>Hospital Name</label><input type="text" id="hl-name" placeholder="Apollo Clinic"/></div>
-      <div class="field"><label>Doctor ID or Email</label><input type="text" id="hl-user" placeholder="DR-123 or email"/></div>
-      <div class="field"><label>Hospital Code</label><input type="text" id="hl-code" placeholder="HOSP-001"/></div>
-      <div class="field"><label>Password</label><input type="password" id="hl-pass" placeholder="••••••••"/></div>
+      <div class="field"><label>Hospital Name</label><input type="text" id="hl-name" placeholder="Apollo Clinic" style=""></div>
+      <div class="field"><label>Doctor ID or Email</label><input type="text" id="hl-user" placeholder="DR-123 or email" style=""></div>
+      <div class="field"><label>Hospital Code</label><input type="text" id="hl-code" placeholder="HOSP-001" style=""></div>
+      <div class="field"><label>Password</label><input type="password" id="hl-pass" placeholder="••••••••" style=""></div>
       <button class="cta" onclick="handleAuth('hospital', 'login')">Login to Portal</button>
     </div>
   </div>
@@ -612,12 +610,12 @@ footer { padding: 4rem 2.5rem; text-align: center; border-top: 1px solid var(--b
 <!-- ════════════════════════════
      PATIENT VIEW
 ════════════════════════════ -->
-<div class="view" id="view-patient">
+<div class="view active" id="view-patient">
   <div class="patient-layout">
 
     <!-- PHONE -->
     <div class="phone-side">
-      <div class="step-track" id="step-track"></div>
+      <div class="step-track" id="step-track"><div class="step-pip done"></div><div class="step-pip done"></div><div class="step-pip done"></div><div class="step-pip active"></div></div>
 
       <div class="phone">
         <div class="phone-island"></div>
@@ -631,13 +629,13 @@ footer { padding: 4rem 2.5rem; text-align: center; border-top: 1px solid var(--b
             </div>
             <div class="screen-body">
               <div class="screen-title">Create your profile</div>
-              <div class="field"><label>Full Name</label><input id="p-name" type="text" placeholder="Your full name"/></div>
-              <div class="field"><label>Age</label><input id="p-age" type="number" placeholder="Age"/></div>
+              <div class="field"><label>Full Name</label><input id="p-name" type="text" placeholder="Your full name" style=""></div>
+              <div class="field"><label>Age</label><input id="p-age" type="number" placeholder="Age" style=""></div>
               <div class="field"><label>Blood Group</label>
                 <select id="p-blood"><option>B+</option><option>A+</option><option>O+</option><option>AB+</option><option>A-</option><option>O-</option></select>
               </div>
-              <div class="field"><label>Conditions</label><input id="p-conditions" placeholder="e.g. Hypertension"/></div>
-              <div class="field"><label>Phone</label><input id="p-phone" placeholder="10-digit number"/></div>
+              <div class="field"><label>Conditions</label><input id="p-conditions" placeholder="e.g. Hypertension" style=""></div>
+              <div class="field"><label>Phone</label><input id="p-phone" placeholder="10-digit number" style=""></div>
               <div id="reg-msg"></div>
               <button class="cta" id="reg-btn" onclick="registerPatient()">Save Profile →</button>
             </div>
@@ -645,7 +643,7 @@ footer { padding: 4rem 2.5rem; text-align: center; border-top: 1px solid var(--b
 
           <!-- Screen 2: Book -->
           <div class="screen" id="screen-2">
-            <div class="screen-top"><h2>Book a Slot</h2><p>Pick hospital & time</p></div>
+            <div class="screen-top"><h2>Book a Slot</h2><p>Pick hospital &amp; time</p></div>
             <div class="screen-body">
               <button class="cta" onclick="gotoScreen(5)" style="background:var(--white); color:var(--teal); border:1.5px solid var(--teal); margin-bottom:1rem">Find Hospitals Near Me 📍</button>
               <div class="screen-title">Select your appointment</div>
@@ -678,7 +676,7 @@ footer { padding: 4rem 2.5rem; text-align: center; border-top: 1px solid var(--b
           <div class="screen" id="screen-3">
             <div class="screen-top"><h2>Confirmed!</h2><p>Show QR at reception</p></div>
             <div class="screen-body">
-              <div class="qr-wrap"><img id="qr-img" src="" alt="QR"/></div>
+              <div class="qr-wrap"><img id="qr-img" src="" alt="QR"></div>
               <div class="detail-row"><span class="lbl">Booking ID</span><span class="val" id="c-id" style="font-family:monospace;color:var(--teal)">—</span></div>
               <div class="detail-row"><span class="lbl">Hospital</span><span class="val" id="c-hospital">—</span></div>
               <div class="detail-row"><span class="lbl">Doctor</span><span class="val" id="c-doctor">—</span></div>
@@ -734,7 +732,7 @@ footer { padding: 4rem 2.5rem; text-align: center; border-top: 1px solid var(--b
 
       <div class="phone-nav">
         <button class="nav-arrow" onclick="prevScreen()">←</button>
-        <span class="step-label" id="step-label">Step 1 of 4</span>
+        <span class="step-label" id="step-label">Step 4 of 4</span>
         <button class="nav-arrow" onclick="nextScreen()">→</button>
       </div>
     </div>
@@ -832,7 +830,7 @@ footer { padding: 4rem 2.5rem; text-align: center; border-top: 1px solid var(--b
         <div class="action-panel">
           <div class="action-head"><h3>Quick Actions</h3></div>
           <div class="action-body">
-            <input class="action-input" id="action-id" placeholder="Booking ID — e.g. MQ-A3F2"/>
+            <input class="action-input" id="action-id" placeholder="Booking ID — e.g. MQ-A3F2" style="">
             <button class="action-btn teal" onclick="markPresent()">Mark as Present</button>
             <button class="action-btn red" onclick="triggerCascade()">Trigger GPS Cascade</button>
             <button class="action-btn grey" onclick="markDone()">Mark as Done</button>
@@ -1334,5 +1332,5 @@ async function triggerCascade() {
 buildTrack();
 checkAuth();
 </script>
-</body>
-</html>
+
+</body></html>
