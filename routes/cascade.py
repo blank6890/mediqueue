@@ -22,7 +22,7 @@ def find_nearest_patients(hospital_lat, hospital_lng, booked_patients, limit=5):
         lng = patient.get('lng', 78.4867)
         distance = haversine_distance(hospital_lat, hospital_lng, lat, lng)
         patients_with_distance.append({
-            "patient_id": patient['_id'],
+            "patient_id": str(patient['_id']),
             "patient_name": patient['name'],
             "phone": patient.get('phone', ''),
             "distance_km": round(distance, 2)

@@ -101,5 +101,32 @@ def get_user(phone, role):
     user = db.users.find_one({"phone": phone, "role": role})
     if not user:
         return jsonify({"error": "User not found"}), 404
-    user['id'] = user.pop('_id')
+    user['id'] = str(user.pop('_id'))
     return jsonify(user)
+
+@auth_bp.route('/api/hospital/login', methods=['POST'])
+def login_hospital():
+    body = request.get_json()
+    hospital_name = body.get('hospital_name')
+    identifier = body.get('identifier') # Doctor ID or email
+    password = body.get('password')
+    hospital_code = body.get('hospital_code')
+
+    if not hospital_name or not identifier or not password or not hospital_code:
+        return jsonify({"error": "All fields are required"}), 400
+
+    # For prototype, we validate against a simple mock or just allow if fields are present
+    # In real app, we would check a 'hospitals' and 'doctors' collection
+
+    user = {
+        "id": identifier,
+        "role": "hospital",
+        "hospital": hospital_name,
+        "hospital_code": hospital_code,
+        "name": identifier # or fetch from DB
+    }
+
+    return jsonify({
+        "message": "Hospital login successful",
+        "user": user
+    })
