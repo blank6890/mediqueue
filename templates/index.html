@@ -882,7 +882,16 @@ function gotoScreen(n) {
 function nextScreen() { if (cur < TOTAL) gotoScreen(cur + 1); }
 function prevScreen() { if (cur > 1) gotoScreen(cur - 1); }
 
-function switchView(v) {
+const routeMap = {
+  '/': 'landing',
+  '/patient/login': 'patient-login',
+  '/patient/signup': 'patient-signup',
+  '/hospital/login': 'hospital-login',
+  '/patient/dashboard': 'patient',
+  '/hospital/dashboard': 'hospital'
+};
+
+function switchView(v, updateHistory = true) {
   document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
   const target = document.getElementById('view-' + v);
   if (target) target.classList.add('active');
@@ -897,46 +906,110 @@ function switchView(v) {
   }
 
   if (v === 'hospital') loadQueue();
-}
 
-function checkAuth() {
-  const user = JSON.parse(localStorage.getItem('mediqueue_user'));
-  if (user) {
-    if (user.role === 'patient') {
-      patientId = user.id || user.phone;
-      switchView('patient');
-    } else if (user.role === 'hospital') {
-      switchView('hospital');
-    }
-  } else {
-    switchView('landing');
+  if (updateHistory) {
+    const path = Object.keys(routeMap).find(key => routeMap[key] === v) || '/';
+    history.pushState({view: v}, '', path);
   }
 }
 
-function handleAuth(role, type) {
-  let user = { role };
+window.addEventListener('popstate', (e) => {
+  const view = (e.state && e.state.view) || routeMap[window.location.pathname] || 'landing';
+  switchView(view, false);
+});
+
+function checkAuth() {
+  const user = JSON.parse(localStorage.getItem('mediqueue_user'));
+  const currentPath = window.location.pathname;
+  const initialView = routeMap[currentPath] || 'landing';
+
+  if (user) {
+    if (user.role === 'patient') {
+      patientId = user.id;
+      // If on landing or auth pages, redirect to dashboard
+      if (['landing', 'patient-login', 'patient-signup', 'hospital-login'].includes(initialView)) {
+        switchView('patient');
+      } else {
+        switchView(initialView, false);
+      }
+    } else if (user.role === 'hospital') {
+      if (['landing', 'patient-login', 'patient-signup', 'hospital-login'].includes(initialView)) {
+        switchView('hospital');
+      } else {
+        switchView(initialView, false);
+      }
+    }
+  } else {
+    switchView(initialView, false);
+  }
+}
+
+async function handleAuth(role, type) {
   if (role === 'patient') {
     if (type === 'signup') {
-      user.name = document.getElementById('ps-name').value;
-      user.phone = document.getElementById('ps-phone').value;
-      user.id = 'P-' + Math.random().toString(36).substr(2, 6).toUpperCase();
+      const payload = {
+        name: document.getElementById('ps-name').value,
+        age: parseInt(document.getElementById('ps-age').value),
+        blood_group: document.getElementById('ps-blood').value,
+        conditions: document.getElementById('ps-cond').value,
+        phone: document.getElementById('ps-phone').value,
+        email: document.getElementById('ps-email').value,
+        password: document.getElementById('ps-pass').value
+      };
+      try {
+        const res = await fetch('/api/patient/signup', {
+          method: 'POST', headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.user) {
+          localStorage.setItem('mediqueue_user', JSON.stringify(data.user));
+          patientId = data.user.id;
+          switchView('patient');
+        } else alert(data.error || 'Signup failed');
+      } catch (e) { alert('Server error'); }
     } else {
-      user.phone = document.getElementById('pl-user').value;
+      const payload = {
+        identifier: document.getElementById('pl-user').value,
+        password: document.getElementById('pl-pass').value
+      };
+      try {
+        const res = await fetch('/api/patient/login', {
+          method: 'POST', headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.user) {
+          localStorage.setItem('mediqueue_user', JSON.stringify(data.user));
+          patientId = data.user.id;
+          switchView('patient');
+        } else alert(data.error || 'Login failed');
+      } catch (e) { alert('Server error'); }
     }
-    patientId = user.id || user.phone;
-    localStorage.setItem('mediqueue_user', JSON.stringify(user));
-    switchView('patient');
   } else {
-    user.hospital = document.getElementById('hl-name').value;
-    user.hospitalCode = document.getElementById('hl-code').value;
-    localStorage.setItem('mediqueue_user', JSON.stringify(user));
-    switchView('hospital');
+    const payload = {
+      hospital_name: document.getElementById('hl-name').value,
+      identifier: document.getElementById('hl-user').value,
+      hospital_code: document.getElementById('hl-code').value,
+      password: document.getElementById('hl-pass').value
+    };
+    try {
+      const res = await fetch('/api/hospital/login', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.user) {
+        localStorage.setItem('mediqueue_user', JSON.stringify(data.user));
+        switchView('hospital');
+      } else alert(data.error || 'Login failed');
+    } catch (e) { alert('Server error'); }
   }
 }
 
 function logout() {
   localStorage.removeItem('mediqueue_user');
-  location.reload();
+  window.location.href = '/';
 }
 
 function haversine(lat1, lon1, lat2, lon2) {

@@ -1,0 +1,12 @@
+Connected to MongoDB Atlas successfully!
+ * Serving Flask app 'app'
+ * Debug mode: off
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+[33mPress CTRL+C to quit[0m
+127.0.0.1 - - [12/May/2026 13:04:59] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [12/May/2026 13:05:01] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [12/May/2026 13:05:04] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [12/May/2026 13:05:05] "POST /api/hospital/login HTTP/1.1" 200 -
+127.0.0.1 - - [12/May/2026 13:05:06] "GET /get-queue HTTP/1.1" 200 -
+127.0.0.1 - - [12/May/2026 13:05:07] "[33mPOST /update-status HTTP/1.1[0m" 404 -
