@@ -329,6 +329,9 @@ nav {
   text-transform: uppercase; letter-spacing: 0.4px;
 }
 .status-pill.booked { background: var(--teal-3); color: var(--teal); }
+.status-pill.notified { background: var(--teal-3); color: var(--teal); }
+.status-pill.pending { background: var(--amber-light); color: var(--amber); }
+.status-pill.standby { background: #ECEFF1; color: #546E7A; }
 .status-pill.present { background: var(--success-light); color: var(--success); }
 .status-pill.missed { background: var(--danger-light); color: var(--danger); }
 
@@ -521,8 +524,8 @@ footer { padding: 4rem 2.5rem; text-align: center; border-top: 1px solid var(--b
       <h1 class="hero-h1" style="text-align:left; font-size: clamp(2rem, 5vw, 3.5rem); margin-bottom: 1rem;">Smart hospital<br>queuing <span>simplified.</span></h1>
       <p class="hero-p" style="text-align:left; margin-left:0; margin-bottom: 2rem;">Skip the waiting room. Track your position in real-time and get notified exactly when to leave your home.</p>
       <div class="hero-ctas" style="justify-content:flex-start;">
-        <button class="hero-btn primary" onclick="switchView('patient-login')">I'm a Patient</button>
-        <button class="hero-btn outline" onclick="switchView('hospital-login')">I'm a Doctor / Hospital Staff</button>
+        <button class="hero-btn primary" onclick="gotoPath('/patient/login')">I'm a Patient</button>
+        <button class="hero-btn outline" onclick="gotoPath('/hospital/login')">I'm a Doctor / Hospital Staff</button>
         <button class="hero-btn outline" onclick="tryDemo()" style="border-color: var(--teal); color: var(--teal)">Try Demo</button>
       </div>
 
@@ -546,16 +549,17 @@ footer { padding: 4rem 2.5rem; text-align: center; border-top: 1px solid var(--b
 <div class="view" id="view-patient-login">
   <div class="auth-view active">
     <div class="auth-card">
-      <button class="back-link" onclick="switchView('landing')">← Back to home</button>
+      <button class="back-link" onclick="gotoPath('/')">← Back to home</button>
       <div class="auth-header">
         <h2>Patient Login</h2>
         <p>Enter your credentials to access your dashboard</p>
       </div>
       <div class="field"><label>Email or Phone</label><input type="text" id="pl-user" placeholder="Enter email or phone"/></div>
       <div class="field"><label>Password</label><input type="password" id="pl-pass" placeholder="••••••••"/></div>
-      <button class="cta" onclick="handleAuth('patient', 'login')">Login to MediQueue</button>
+      <div id="pl-msg"></div>
+      <button class="cta" id="pl-btn" onclick="handleAuth('patient', 'login')">Login to MediQueue</button>
       <p style="text-align:center; font-size:0.85rem; margin-top:1.5rem; color:var(--muted)">
-        New to MediQueue? <a href="javascript:void(0)" onclick="switchView('patient-signup')" style="color:var(--teal); font-weight:600; text-decoration:none">Create account</a>
+        New to MediQueue? <a href="javascript:void(0)" onclick="gotoPath('/patient/signup')" style="color:var(--teal); font-weight:600; text-decoration:none">Create account</a>
       </p>
     </div>
   </div>
@@ -567,7 +571,7 @@ footer { padding: 4rem 2.5rem; text-align: center; border-top: 1px solid var(--b
 <div class="view" id="view-patient-signup">
   <div class="auth-view active">
     <div class="auth-card">
-      <button class="back-link" onclick="switchView('patient-login')">← Back to login</button>
+      <button class="back-link" onclick="gotoPath('/patient/login')">← Back to login</button>
       <div class="auth-header">
         <h2>Patient Signup</h2>
         <p>Join MediQueue for a seamless hospital experience</p>
@@ -583,7 +587,8 @@ footer { padding: 4rem 2.5rem; text-align: center; border-top: 1px solid var(--b
       <div class="field"><label>Phone Number</label><input type="text" id="ps-phone" placeholder="10-digit number"/></div>
       <div class="field"><label>Email</label><input type="email" id="ps-email" placeholder="john@example.com"/></div>
       <div class="field"><label>Password</label><input type="password" id="ps-pass" placeholder="••••••••"/></div>
-      <button class="cta" onclick="handleAuth('patient', 'signup')">Create Account</button>
+      <div id="ps-msg"></div>
+      <button class="cta" id="ps-btn" onclick="handleAuth('patient', 'signup')">Create Account</button>
     </div>
   </div>
 </div>
@@ -594,7 +599,7 @@ footer { padding: 4rem 2.5rem; text-align: center; border-top: 1px solid var(--b
 <div class="view" id="view-hospital-login">
   <div class="auth-view active">
     <div class="auth-card">
-      <button class="back-link" onclick="switchView('landing')">← Back to home</button>
+      <button class="back-link" onclick="gotoPath('/')">← Back to home</button>
       <div class="auth-header">
         <h2>Hospital Portal</h2>
         <p>Access your live queue and management tools</p>
@@ -603,7 +608,8 @@ footer { padding: 4rem 2.5rem; text-align: center; border-top: 1px solid var(--b
       <div class="field"><label>Doctor ID or Email</label><input type="text" id="hl-user" placeholder="DR-123 or email"/></div>
       <div class="field"><label>Hospital Code</label><input type="text" id="hl-code" placeholder="HOSP-001"/></div>
       <div class="field"><label>Password</label><input type="password" id="hl-pass" placeholder="••••••••"/></div>
-      <button class="cta" onclick="handleAuth('hospital', 'login')">Login to Portal</button>
+      <div id="hl-msg"></div>
+      <button class="cta" id="hl-btn" onclick="handleAuth('hospital', 'login')">Login to Portal</button>
     </div>
   </div>
 </div>
@@ -899,38 +905,110 @@ function switchView(v) {
   if (v === 'hospital') loadQueue();
 }
 
-function checkAuth() {
+function gotoPath(path) {
+  window.history.pushState({}, '', path);
+  router();
+}
+
+function router() {
+  const path = window.location.pathname;
   const user = JSON.parse(localStorage.getItem('mediqueue_user'));
-  if (user) {
-    if (user.role === 'patient') {
-      patientId = user.id || user.phone;
+
+  if (path === '/') {
+    switchView('landing');
+  } else if (path === '/patient/login') {
+    switchView('patient-login');
+  } else if (path === '/patient/signup') {
+    switchView('patient-signup');
+  } else if (path === '/hospital/login') {
+    switchView('hospital-login');
+  } else if (path === '/patient/dashboard') {
+    if (user && user.role === 'patient') {
+      patientId = user.id;
       switchView('patient');
-    } else if (user.role === 'hospital') {
+      loadHospitals();
+    } else {
+      gotoPath('/patient/login');
+    }
+  } else if (path === '/hospital/dashboard') {
+    if (user && user.role === 'hospital') {
       switchView('hospital');
+    } else {
+      gotoPath('/hospital/login');
     }
   } else {
     switchView('landing');
   }
 }
 
-function handleAuth(role, type) {
-  let user = { role };
-  if (role === 'patient') {
-    if (type === 'signup') {
-      user.name = document.getElementById('ps-name').value;
-      user.phone = document.getElementById('ps-phone').value;
-      user.id = 'P-' + Math.random().toString(36).substr(2, 6).toUpperCase();
+window.onpopstate = router;
+
+function checkAuth() {
+  router();
+}
+
+async function handleAuth(role, type) {
+  const btn = document.getElementById(role === 'patient' ? (type === 'login' ? 'pl-btn' : 'ps-btn') : 'hl-btn');
+  const msgId = role === 'patient' ? (type === 'login' ? 'pl-msg' : 'ps-msg') : 'hl-msg';
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span> Authenticating...';
+
+  try {
+    let res, data;
+    if (role === 'patient') {
+      if (type === 'signup') {
+        const body = {
+          name: document.getElementById('ps-name').value,
+          age: parseInt(document.getElementById('ps-age').value),
+          blood_group: document.getElementById('ps-blood').value,
+          conditions: document.getElementById('ps-cond').value,
+          phone: document.getElementById('ps-phone').value,
+          email: document.getElementById('ps-email').value,
+          password: document.getElementById('ps-pass').value
+        };
+        res = await fetch('/api/patient/signup', {
+          method: 'POST', headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(body)
+        });
+      } else {
+        res = await fetch('/api/patient/login', {
+          method: 'POST', headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            identifier: document.getElementById('pl-user').value,
+            password: document.getElementById('pl-pass').value
+          })
+        });
+      }
     } else {
-      user.phone = document.getElementById('pl-user').value;
+      res = await fetch('/api/hospital/login', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          hospital_name: document.getElementById('hl-name').value,
+          doctor_id: document.getElementById('hl-user').value,
+          hospital_code: document.getElementById('hl-code').value,
+          password: document.getElementById('hl-pass').value
+        })
+      });
     }
-    patientId = user.id || user.phone;
-    localStorage.setItem('mediqueue_user', JSON.stringify(user));
-    switchView('patient');
-  } else {
-    user.hospital = document.getElementById('hl-name').value;
-    user.hospitalCode = document.getElementById('hl-code').value;
-    localStorage.setItem('mediqueue_user', JSON.stringify(user));
-    switchView('hospital');
+
+    data = await res.json();
+    if (res.ok) {
+      localStorage.setItem('mediqueue_user', JSON.stringify(data.user));
+      if (role === 'patient') {
+        patientId = data.user.id;
+        gotoPath('/patient/dashboard');
+      } else {
+        gotoPath('/hospital/dashboard');
+      }
+    } else {
+      showMsg(msgId, 'error', data.error || 'Authentication failed');
+    }
+  } catch (e) {
+    showMsg(msgId, 'error', 'Server error. Please try again.');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = role === 'patient' ? (type === 'login' ? 'Login to MediQueue' : 'Create Account') : 'Login to Portal';
   }
 }
 
@@ -1048,7 +1126,8 @@ function tryDemo() {
   };
   localStorage.setItem('mediqueue_user', JSON.stringify(demoUser));
   patientId = demoUser.id;
-  switchView('patient');
+  gotoPath('/patient/dashboard');
+
   // Fill some demo data
   document.getElementById('p-name').value = demoUser.name;
   document.getElementById('p-phone').value = demoUser.phone;
@@ -1142,6 +1221,17 @@ async function refreshQueue() {
       }
     }
   } catch(e) { document.getElementById('live-eta').textContent = 'Server unreachable'; }
+}
+
+async function loadHospitals() {
+  try {
+    const res = await fetch('/get-hospitals');
+    const hospitals = await res.json();
+    const select = document.getElementById('b-hospital');
+    if (select) {
+      select.innerHTML = hospitals.map(h => `<option value="${h.name}">${h.name}</option>`).join('');
+    }
+  } catch (e) {}
 }
 
 async function loadQueue() {
