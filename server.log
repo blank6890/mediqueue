@@ -1,0 +1,38 @@
+Connected to MongoDB Atlas successfully!
+ * Serving Flask app 'app'
+ * Debug mode: off
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+[33mPress CTRL+C to quit[0m
+127.0.0.1 - - [14/May/2026 12:49:42] "POST /api/hospital/login HTTP/1.1" 200 -
+127.0.0.1 - - [14/May/2026 12:49:52] "[31m[1mPOST /api/patient/signup HTTP/1.1[0m" 400 -
+127.0.0.1 - - [14/May/2026 12:50:06] "POST /api/patient/login HTTP/1.1" 200 -
+127.0.0.1 - - [14/May/2026 12:59:02] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [14/May/2026 12:59:06] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [14/May/2026 12:59:28] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [14/May/2026 12:59:31] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [14/May/2026 12:59:35] "[35m[1mPOST /api/patient/signup HTTP/1.1[0m" 201 -
+127.0.0.1 - - [14/May/2026 12:59:37] "GET /get-hospitals HTTP/1.1" 200 -
+127.0.0.1 - - [14/May/2026 12:59:41] "[33mPOST /book-slot HTTP/1.1[0m" 404 -
+127.0.0.1 - - [14/May/2026 13:00:36] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [14/May/2026 13:00:39] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [14/May/2026 13:00:43] "[35m[1mPOST /api/patient/signup HTTP/1.1[0m" 201 -
+127.0.0.1 - - [14/May/2026 13:00:45] "GET /get-hospitals HTTP/1.1" 200 -
+127.0.0.1 - - [14/May/2026 13:03:40] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [14/May/2026 13:03:43] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [14/May/2026 13:03:46] "[35m[1mPOST /api/patient/signup HTTP/1.1[0m" 201 -
+127.0.0.1 - - [14/May/2026 13:03:49] "GET /get-hospitals HTTP/1.1" 200 -
+127.0.0.1 - - [14/May/2026 13:03:53] "[33mPOST /book-slot HTTP/1.1[0m" 404 -
+127.0.0.1 - - [14/May/2026 13:04:52] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [14/May/2026 13:04:56] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [14/May/2026 13:04:59] "[35m[1mPOST /api/patient/signup HTTP/1.1[0m" 201 -
+127.0.0.1 - - [14/May/2026 13:05:02] "GET /get-hospitals HTTP/1.1" 200 -
+127.0.0.1 - - [14/May/2026 13:05:06] "[33mPOST /book-slot HTTP/1.1[0m" 404 -
+127.0.0.1 - - [14/May/2026 13:05:58] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [14/May/2026 13:06:01] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [14/May/2026 13:06:04] "[35m[1mPOST /api/patient/signup HTTP/1.1[0m" 201 -
+127.0.0.1 - - [14/May/2026 13:06:07] "GET /get-hospitals HTTP/1.1" 200 -
+127.0.0.1 - - [14/May/2026 13:06:11] "[33mPOST /book-slot HTTP/1.1[0m" 404 -
+127.0.0.1 - - [14/May/2026 13:06:15] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [14/May/2026 13:06:16] "POST /api/hospital/login HTTP/1.1" 200 -
+127.0.0.1 - - [14/May/2026 13:06:17] "GET /get-queue HTTP/1.1" 200 -
