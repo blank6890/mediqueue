@@ -55,10 +55,15 @@ def book_slot():
 
 @queue_bp.route('/get-queue', methods=['GET'])
 def get_queue():
+    hospital = request.args.get('hospital')
     db = get_db()
-    active = list(db.queue.find({"status": {"$in": ["booked", "present", "missed"]}}))
+    query = {"status": {"$in": ["booked", "present", "missed"]}}
+    if hospital:
+        query["hospital"] = hospital
+
+    active = list(db.queue.find(query))
     for item in active:
-        item['booking_id'] = item.pop('_id')
+        item['booking_id'] = str(item.pop('_id'))
     return jsonify({"total_in_queue": len(active), "queue": active})
 
 
