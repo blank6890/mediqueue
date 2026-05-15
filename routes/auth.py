@@ -103,3 +103,74 @@ def get_user(phone, role):
         return jsonify({"error": "User not found"}), 404
     user['id'] = user.pop('_id')
     return jsonify(user)
+
+@auth_bp.route('/api/patient/signup', methods=['POST'])
+def patient_signup():
+    body = request.get_json()
+    db = get_db()
+
+    # Check if exists
+    if db.patients.find_one({"$or": [{"phone": body.get('phone')}, {"email": body.get('email')}]}):
+        return jsonify({"error": "Patient already exists"}), 400
+
+    from routes.patients import register_patient
+    # This is a bit hacky because register_patient is a route, but for prototype it works
+    # Or we can just re-implement here
+    import uuid
+    patient_id = "P-" + str(uuid.uuid4())[:6].upper()
+    patient = {
+        "_id": patient_id,
+        "name": body.get('name'),
+        "age": body.get('age'),
+        "blood_group": body.get('blood_group'),
+        "conditions": body.get('conditions'),
+        "phone": body.get('phone'),
+        "email": body.get('email'),
+        "password": body.get('password'),
+        "role": "patient"
+    }
+    db.patients.insert_one(patient)
+    patient['id'] = patient.pop('_id')
+    return jsonify({"message": "Signup successful", "user": patient})
+
+@auth_bp.route('/api/patient/login', methods=['POST'])
+def patient_login():
+    body = request.get_json()
+    login_id = body.get('loginId') # phone or email
+    password = body.get('password')
+
+    db = get_db()
+    user = db.patients.find_one({
+        "$and": [
+            {"$or": [{"phone": login_id}, {"email": login_id}]},
+            {"password": password}
+        ]
+    })
+
+    if not user:
+        return jsonify({"error": "Invalid credentials"}), 401
+
+    user['id'] = str(user.pop('_id'))
+    user['role'] = 'patient'
+    return jsonify({"message": "Login successful", "user": user})
+
+@auth_bp.route('/api/hospital/login', methods=['POST'])
+def hospital_login():
+    body = request.get_json()
+    # For prototype, we accept any login but check hospital code against our list
+    h_code = body.get('hospitalCode')
+
+    from routes.hospitals import HOSPITALS
+    hospital = next((h for h in HOSPITALS if h['id'] == h_code), None)
+
+    if not hospital:
+         return jsonify({"error": "Invalid Hospital Code"}), 401
+
+    user = {
+        "name": body.get('doctorName') or body.get('hospitalName'),
+        "hospitalName": hospital['name'],
+        "hospitalCode": h_code,
+        "role": "hospital",
+        "email": body.get('loginId')
+    }
+    return jsonify({"message": "Login successful", "user": user})
