@@ -882,7 +882,7 @@ function gotoScreen(n) {
 function nextScreen() { if (cur < TOTAL) gotoScreen(cur + 1); }
 function prevScreen() { if (cur > 1) gotoScreen(cur - 1); }
 
-function switchView(v) {
+function switchView(v, updateURL = true) {
   document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
   const target = document.getElementById('view-' + v);
   if (target) target.classList.add('active');
@@ -897,46 +897,116 @@ function switchView(v) {
   }
 
   if (v === 'hospital') loadQueue();
-}
 
-function checkAuth() {
-  const user = JSON.parse(localStorage.getItem('mediqueue_user'));
-  if (user) {
-    if (user.role === 'patient') {
-      patientId = user.id || user.phone;
-      switchView('patient');
-    } else if (user.role === 'hospital') {
-      switchView('hospital');
+  if (updateURL) {
+    let path = '/';
+    if (v === 'patient') path = '/patient/dashboard';
+    else if (v === 'hospital') path = '/hospital/dashboard';
+    else if (v === 'patient-login') path = '/patient/login';
+    else if (v === 'patient-signup') path = '/patient/signup';
+    else if (v === 'hospital-login') path = '/hospital/login';
+    else if (v === 'landing') path = '/';
+
+    if (window.location.pathname !== path) {
+      window.history.pushState({view: v}, '', path);
     }
-  } else {
-    switchView('landing');
   }
 }
 
-function handleAuth(role, type) {
-  let user = { role };
+function router() {
+  const path = window.location.pathname;
+  const user = JSON.parse(localStorage.getItem('mediqueue_user'));
+
+  if (path === '/patient/login') switchView('patient-login', false);
+  else if (path === '/patient/signup') switchView('patient-signup', false);
+  else if (path === '/hospital/login') switchView('hospital-login', false);
+  else if (path === '/patient/dashboard') {
+    if (user && user.role === 'patient') {
+      patientId = user.id || user.phone;
+      switchView('patient', false);
+    } else switchView('patient-login', false);
+  }
+  else if (path === '/hospital/dashboard') {
+    if (user && user.role === 'hospital') switchView('hospital', false);
+    else switchView('hospital-login', false);
+  }
+  else switchView('landing', false);
+}
+
+window.onpopstate = function(event) {
+  router();
+};
+
+function checkAuth() {
+  router();
+}
+
+async function handleAuth(role, type) {
   if (role === 'patient') {
     if (type === 'signup') {
-      user.name = document.getElementById('ps-name').value;
-      user.phone = document.getElementById('ps-phone').value;
-      user.id = 'P-' + Math.random().toString(36).substr(2, 6).toUpperCase();
+      const payload = {
+        name: document.getElementById('ps-name').value,
+        age: document.getElementById('ps-age').value,
+        blood_group: document.getElementById('ps-blood').value,
+        conditions: document.getElementById('ps-cond').value,
+        phone: document.getElementById('ps-phone').value,
+        email: document.getElementById('ps-email').value,
+        password: document.getElementById('ps-pass').value
+      };
+      try {
+        const res = await fetch('/api/patient/signup', {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.user) {
+          localStorage.setItem('mediqueue_user', JSON.stringify(data.user));
+          patientId = data.user.id;
+          switchView('patient');
+        } else alert(data.error || 'Signup failed');
+      } catch(e) { alert('Server error'); }
     } else {
-      user.phone = document.getElementById('pl-user').value;
+      const payload = {
+        user: document.getElementById('pl-user').value,
+        password: document.getElementById('pl-pass').value
+      };
+      try {
+        const res = await fetch('/api/patient/login', {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (data.user) {
+          localStorage.setItem('mediqueue_user', JSON.stringify(data.user));
+          patientId = data.user.id;
+          switchView('patient');
+        } else alert(data.error || 'Login failed');
+      } catch(e) { alert('Server error'); }
     }
-    patientId = user.id || user.phone;
-    localStorage.setItem('mediqueue_user', JSON.stringify(user));
-    switchView('patient');
   } else {
-    user.hospital = document.getElementById('hl-name').value;
-    user.hospitalCode = document.getElementById('hl-code').value;
-    localStorage.setItem('mediqueue_user', JSON.stringify(user));
-    switchView('hospital');
+    const payload = {
+      hospital_name: document.getElementById('hl-name').value,
+      user: document.getElementById('hl-user').value,
+      hospital_code: document.getElementById('hl-code').value,
+      password: document.getElementById('hl-pass').value
+    };
+    try {
+      const res = await fetch('/api/hospital/login', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (data.user) {
+        localStorage.setItem('mediqueue_user', JSON.stringify(data.user));
+        switchView('hospital');
+      } else alert(data.error || 'Login failed');
+    } catch(e) { alert('Server error'); }
   }
 }
 
 function logout() {
   localStorage.removeItem('mediqueue_user');
-  location.reload();
+  switchView('landing');
 }
 
 function haversine(lat1, lon1, lat2, lon2) {
@@ -1049,9 +1119,6 @@ function tryDemo() {
   localStorage.setItem('mediqueue_user', JSON.stringify(demoUser));
   patientId = demoUser.id;
   switchView('patient');
-  // Fill some demo data
-  document.getElementById('p-name').value = demoUser.name;
-  document.getElementById('p-phone').value = demoUser.phone;
 
   // Set demo queue tracking state
   document.getElementById('live-pos').textContent = '3';
@@ -1210,7 +1277,7 @@ async function triggerCascade() {
           <div class="cascade-rank">${i+1}</div>
           <span style="font-weight:700">${p.name}</span>
         </div>
-        <span class="badge-demo ${p.status}">${p.status}</span>
+        <span class="badge-demo ${p.status}">${p.status.charAt(0).toUpperCase() + p.status.slice(1)}</span>
       </div>
       <div style="display:flex; justify-content:space-between; width:100%; font-size:0.75rem; color:var(--muted)">
         <span>ID: ${p.bookingId} • ${p.distance}</span>

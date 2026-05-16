@@ -103,3 +103,84 @@ def get_user(phone, role):
         return jsonify({"error": "User not found"}), 404
     user['id'] = user.pop('_id')
     return jsonify(user)
+
+@auth_bp.route('/api/patient/signup', methods=['POST'])
+def patient_signup():
+    body = request.get_json()
+    required = ['name', 'age', 'blood_group', 'phone', 'email', 'password']
+    for f in required:
+        if not body.get(f):
+            return jsonify({"error": f"{f} is required"}), 400
+
+    db = get_db()
+    # Check if patient already exists
+    if db.patients.find_one({"$or": [{"phone": body['phone']}, {"email": body['email']}]}):
+        return jsonify({"error": "Patient with this phone or email already exists"}), 400
+
+    patient_id = "P-" + str(random.randint(100000, 999999))
+    patient = {
+        "_id": patient_id,
+        "name": body['name'],
+        "age": body['age'],
+        "blood_group": body['blood_group'],
+        "conditions": body.get('conditions', ''),
+        "phone": body['phone'],
+        "email": body['email'],
+        "password": body['password'], # Plaintext for prototype as requested
+        "role": "patient",
+        "created_at": time.time()
+    }
+    db.patients.insert_one(patient)
+
+    patient['id'] = patient.pop('_id')
+    return jsonify({"message": "Signup successful", "user": patient}), 201
+
+@auth_bp.route('/api/patient/login', methods=['POST'])
+def patient_login():
+    body = request.get_json()
+    user_input = body.get('user') # Phone or Email
+    password = body.get('password')
+
+    if not user_input or not password:
+        return jsonify({"error": "Phone/Email and password are required"}), 400
+
+    db = get_db()
+    patient = db.patients.find_one({
+        "$or": [{"phone": user_input}, {"email": user_input}],
+        "password": password
+    })
+
+    if not patient:
+        return jsonify({"error": "Invalid credentials"}), 401
+
+    patient['id'] = patient.pop('_id')
+    return jsonify({"message": "Login successful", "user": patient})
+
+@auth_bp.route('/api/hospital/login', methods=['POST'])
+def hospital_login():
+    body = request.get_json()
+    hospital_name = body.get('hospital_name')
+    user_input = body.get('user') # Doctor ID or Email
+    hospital_code = body.get('hospital_code')
+    password = body.get('password')
+
+    if not all([hospital_name, user_input, hospital_code, password]):
+        return jsonify({"error": "All fields are required"}), 400
+
+    # For prototype, we accept any hospital login with a specific password or just mock it
+    # But let's at least check the hospital code matches our seed data if possible
+    from routes.hospitals import HOSPITALS
+    hosp = next((h for h in HOSPITALS if h['id'] == hospital_code), None)
+
+    if not hosp:
+        return jsonify({"error": "Invalid Hospital Code"}), 401
+
+    # Simple mock verification for prototype
+    user = {
+        "role": "hospital",
+        "hospital": hospital_name,
+        "hospital_code": hospital_code,
+        "user": user_input
+    }
+
+    return jsonify({"message": "Hospital login successful", "user": user})
