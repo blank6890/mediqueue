@@ -101,5 +101,51 @@ def get_user(phone, role):
     user = db.users.find_one({"phone": phone, "role": role})
     if not user:
         return jsonify({"error": "User not found"}), 404
-    user['id'] = user.pop('_id')
+    user['id'] = str(user.pop('_id'))
     return jsonify(user)
+
+@auth_bp.route('/patient/signup', methods=['POST'])
+def patient_signup():
+    body = request.get_json()
+    db = get_db()
+    user = {
+        "name": body.get('name'),
+        "age": body.get('age'),
+        "blood_group": body.get('blood_group'),
+        "conditions": body.get('conditions'),
+        "phone": body.get('phone'),
+        "email": body.get('email'),
+        "password": body.get('password'),
+        "role": "patient",
+        "created_at": time.time()
+    }
+    db.users.insert_one(user)
+    user['id'] = str(user.pop('_id'))
+    return jsonify({"message": "Signup successful", "user": user}), 201
+
+@auth_bp.route('/patient/login', methods=['POST'])
+def patient_login():
+    body = request.get_json()
+    user_input = body.get('user')
+    password = body.get('password')
+    db = get_db()
+    user = db.users.find_one({
+        "$or": [{"phone": user_input}, {"email": user_input}],
+        "password": password,
+        "role": "patient"
+    })
+    if user:
+        user['id'] = str(user.pop('_id'))
+        return jsonify({"message": "Login successful", "user": user})
+    return jsonify({"error": "Invalid credentials"}), 401
+
+@auth_bp.route('/hospital/login', methods=['POST'])
+def hospital_login():
+    body = request.get_json()
+    user = {
+        "hospital": body.get('hospital_name'),
+        "doctor_id": body.get('doctor_id'),
+        "hospital_code": body.get('hospital_code'),
+        "role": "hospital"
+    }
+    return jsonify({"message": "Login successful", "user": user})
