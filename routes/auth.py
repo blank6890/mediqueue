@@ -101,5 +101,99 @@ def get_user(phone, role):
     user = db.users.find_one({"phone": phone, "role": role})
     if not user:
         return jsonify({"error": "User not found"}), 404
-    user['id'] = user.pop('_id')
+    user['id'] = str(user.pop('_id'))
     return jsonify(user)
+
+@auth_bp.route('/patient/signup', methods=['POST'])
+def patient_signup():
+    data = request.get_json()
+    db = get_db()
+
+    # Check if patient already exists
+    if db.users.find_one({"$or": [{"email": data.get('email')}, {"phone": data.get('phone')}], "role": "patient"}):
+        return jsonify({"error": "Patient with this email or phone already exists"}), 400
+
+    user_id = str(random.randint(100000, 999999))
+    patient = {
+        "_id": user_id,
+        "name": data.get('name'),
+        "age": data.get('age'),
+        "blood_group": data.get('blood_group'),
+        "conditions": data.get('conditions'),
+        "phone": data.get('phone'),
+        "email": data.get('email'),
+        "password": data.get('password'),
+        "role": "patient",
+        "created_at": time.time()
+    }
+
+    db.users.insert_one(patient)
+
+    # Also insert into patients collection for compatibility with existing code
+    db.patients.insert_one({
+        "_id": user_id,
+        "name": data.get('name'),
+        "age": data.get('age'),
+        "blood_group": data.get('blood_group'),
+        "conditions": data.get('conditions'),
+        "phone": data.get('phone'),
+        "lat": 17.3850, # Default Hyderabad
+        "lng": 78.4867
+    })
+
+    return jsonify({"message": "Signup successful", "user": {"id": user_id, "name": patient['name'], "role": "patient"}})
+
+@auth_bp.route('/patient/login', methods=['POST'])
+def patient_login():
+    data = request.get_json()
+    identifier = data.get('identifier') # Phone or Email
+    password = data.get('password')
+
+    db = get_db()
+    user = db.users.find_one({
+        "$or": [{"email": identifier}, {"phone": identifier}],
+        "password": password,
+        "role": "patient"
+    })
+
+    if not user:
+        return jsonify({"error": "Invalid credentials"}), 401
+
+    return jsonify({
+        "message": "Login successful",
+        "user": {"id": str(user['_id']), "name": user['name'], "role": "patient", "phone": user['phone']}
+    })
+
+@auth_bp.route('/hospital/login', methods=['POST'])
+def hospital_login():
+    data = request.get_json()
+    hospital_name = data.get('hospital_name')
+    identifier = data.get('identifier') # Doctor ID or Email
+    hospital_code = data.get('hospital_code')
+    password = data.get('password')
+
+    db = get_db()
+    # In a real app, we'd verify hospital_code and doctor credentials properly.
+    # For prototype, we'll just check if a hospital user exists or create a mock one.
+    user = db.users.find_one({
+        "$or": [{"email": identifier}, {"doctor_id": identifier}],
+        "password": password,
+        "role": "hospital",
+        "hospital_code": hospital_code
+    })
+
+    if not user:
+        # For prototype ease, let's allow any login for hospital if it matches a hardcoded password or just accept it
+        # Actually, let's be slightly more robust.
+        if password == "admin123": # Mock password for demo
+            user_id = "H-" + hospital_code
+            return jsonify({
+                "message": "Login successful",
+                "user": {"id": user_id, "name": identifier, "role": "hospital", "hospital": hospital_name, "hospitalCode": hospital_code}
+            })
+        return jsonify({"error": "Invalid credentials"}), 401
+
+    return jsonify({
+        "message": "Login successful",
+        "user": {"id": str(user['_id']), "name": user['name'], "role": "hospital", "hospital": user['hospital'], "hospitalCode": user['hospital_code']}
+    })
