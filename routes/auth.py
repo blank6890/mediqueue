@@ -103,3 +103,71 @@ def get_user(phone, role):
         return jsonify({"error": "User not found"}), 404
     user['id'] = user.pop('_id')
     return jsonify(user)
+
+@auth_bp.route('/patient/signup', methods=['POST'])
+def patient_signup():
+    body = request.get_json()
+    required = ['name', 'age', 'blood_group', 'phone', 'email', 'password']
+    for f in required:
+        if f not in body:
+            return jsonify({"error": f"Missing: {f}"}), 400
+
+    db = get_db()
+    # Mock signup - in reality, we'd hash the password
+    user_id = "P-" + str(random.randint(1000, 9999))
+    patient = {
+        "_id": user_id,
+        "name": body['name'],
+        "age": body['age'],
+        "blood_group": body['blood_group'],
+        "conditions": body.get('conditions', ''),
+        "phone": body['phone'],
+        "email": body['email'],
+        "password": body['password'], # Plaintext for prototype
+        "role": "patient"
+    }
+    db.patients.insert_one(patient)
+
+    return jsonify({"message": "Signup successful", "user": {"id": user_id, "name": body['name'], "role": "patient"}})
+
+@auth_bp.route('/patient/login', methods=['POST'])
+def patient_login():
+    body = request.get_json()
+    login = body.get('login')
+    password = body.get('password')
+
+    if not login or not password:
+        return jsonify({"error": "Login and password required"}), 400
+
+    db = get_db()
+    # Search by email or phone
+    user = db.patients.find_one({
+        "$or": [{"email": login}, {"phone": login}],
+        "password": password
+    })
+
+    if not user:
+        return jsonify({"error": "Invalid credentials"}), 401
+
+    return jsonify({
+        "message": "Login successful",
+        "user": {"id": user['_id'], "name": user['name'], "role": "patient"}
+    })
+
+@auth_bp.route('/hospital/login', methods=['POST'])
+def hospital_login():
+    body = request.get_json()
+    required = ['hospital_name', 'user', 'hospital_code', 'password']
+    for f in required:
+        if f not in body:
+            return jsonify({"error": f"Missing: {f}"}), 400
+
+    # Mock hospital login - always succeeds for prototype if all fields present
+    return jsonify({
+        "message": "Hospital login successful",
+        "user": {
+            "hospital": body['hospital_name'],
+            "hospitalCode": body['hospital_code'],
+            "role": "hospital"
+        }
+    })
