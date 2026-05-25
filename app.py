@@ -13,11 +13,11 @@ CORS(app, resources={r"/*": {"origins": "*"}})
 
 init_db()
 
-app.register_blueprint(patients_bp)
-app.register_blueprint(queue_bp)
-app.register_blueprint(cascade_bp)
-app.register_blueprint(hospitals_bp)
-app.register_blueprint(auth_bp)
+app.register_blueprint(patients_bp, url_prefix='/api')
+app.register_blueprint(queue_bp, url_prefix='/api')
+app.register_blueprint(cascade_bp, url_prefix='/api')
+app.register_blueprint(hospitals_bp, url_prefix='/api')
+app.register_blueprint(auth_bp, url_prefix='/api')
 
 @app.route('/')
 def home():

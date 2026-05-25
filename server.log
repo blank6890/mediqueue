@@ -1,0 +1,47 @@
+Connected to MongoDB Atlas successfully!
+ * Serving Flask app 'app'
+ * Debug mode: off
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+[33mPress CTRL+C to quit[0m
+127.0.0.1 - - [25/May/2026 12:59:03] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [25/May/2026 12:59:20] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [25/May/2026 13:00:05] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [25/May/2026 13:00:10] "GET /get-hospitals HTTP/1.1" 200 -
+127.0.0.1 - - [25/May/2026 13:00:14] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [25/May/2026 13:00:28] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [25/May/2026 13:00:32] "GET /get-hospitals HTTP/1.1" 200 -
+127.0.0.1 - - [25/May/2026 13:00:36] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [25/May/2026 13:00:52] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [25/May/2026 13:00:56] "GET /get-hospitals HTTP/1.1" 200 -
+127.0.0.1 - - [25/May/2026 13:01:00] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [25/May/2026 13:01:02] "[33mPOST /api/patient/signup HTTP/1.1[0m" 404 -
+127.0.0.1 - - [25/May/2026 13:01:48] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [25/May/2026 13:01:53] "GET /get-hospitals HTTP/1.1" 200 -
+127.0.0.1 - - [25/May/2026 13:01:57] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [25/May/2026 13:01:59] "[33mPOST /api/patient/signup HTTP/1.1[0m" 404 -
+127.0.0.1 - - [25/May/2026 13:02:49] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [25/May/2026 13:02:54] "GET /get-hospitals HTTP/1.1" 200 -
+127.0.0.1 - - [25/May/2026 13:02:58] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [25/May/2026 13:03:00] "[33mPOST /api/patient/signup HTTP/1.1[0m" 404 -
+127.0.0.1 - - [25/May/2026 13:03:04] "[33mPOST /api/hospital/login HTTP/1.1[0m" 404 -
+127.0.0.1 - - [25/May/2026 13:03:50] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [25/May/2026 13:03:54] "GET /get-hospitals HTTP/1.1" 200 -
+127.0.0.1 - - [25/May/2026 13:03:59] "[33mPOST /api/patient/signup HTTP/1.1[0m" 404 -
+127.0.0.1 - - [25/May/2026 13:04:03] "[33mPOST /api/hospital/login HTTP/1.1[0m" 404 -
+127.0.0.1 - - [25/May/2026 13:05:08] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [25/May/2026 13:05:12] "GET /get-hospitals HTTP/1.1" 200 -
+127.0.0.1 - - [25/May/2026 13:05:20] "GET /get-queue HTTP/1.1" 200 -
+127.0.0.1 - - [25/May/2026 13:05:21] "[33mPOST /update-status HTTP/1.1[0m" 404 -
+127.0.0.1 - - [25/May/2026 13:05:21] "GET /get-queue HTTP/1.1" 200 -
+127.0.0.1 - - [25/May/2026 13:07:34] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [25/May/2026 13:08:21] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [25/May/2026 13:09:54] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [25/May/2026 13:09:55] "[33mPOST /api/hospital/login HTTP/1.1[0m" 404 -
+127.0.0.1 - - [25/May/2026 13:10:51] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [25/May/2026 13:10:52] "[33mPOST /api/hospital/login HTTP/1.1[0m" 404 -
+127.0.0.1 - - [25/May/2026 13:11:45] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [25/May/2026 13:11:49] "GET /get-hospitals HTTP/1.1" 200 -
+127.0.0.1 - - [25/May/2026 13:11:56] "GET /get-queue HTTP/1.1" 200 -
+127.0.0.1 - - [25/May/2026 13:11:57] "[33mPOST /update-status HTTP/1.1[0m" 404 -
+127.0.0.1 - - [25/May/2026 13:11:57] "GET /get-queue HTTP/1.1" 200 -
