@@ -328,7 +328,7 @@ nav {
   font-size: 0.7rem; font-weight: 700; text-align: center;
   text-transform: uppercase; letter-spacing: 0.4px;
 }
-.status-pill.booked { background: var(--teal-3); color: var(--teal); }
+.status-pill.booked { background: var(--teal); color: white; }
 .status-pill.present { background: var(--success-light); color: var(--success); }
 .status-pill.missed { background: var(--danger-light); color: var(--danger); }
 
@@ -583,7 +583,8 @@ footer { padding: 4rem 2.5rem; text-align: center; border-top: 1px solid var(--b
       <div class="field"><label>Phone Number</label><input type="text" id="ps-phone" placeholder="10-digit number"/></div>
       <div class="field"><label>Email</label><input type="email" id="ps-email" placeholder="john@example.com"/></div>
       <div class="field"><label>Password</label><input type="password" id="ps-pass" placeholder="••••••••"/></div>
-      <button class="cta" onclick="handleAuth('patient', 'signup')">Create Account</button>
+      <div id="ps-msg"></div>
+      <button class="cta" id="ps-btn" onclick="handleAuth('patient', 'signup')">Create Account</button>
     </div>
   </div>
 </div>
@@ -603,7 +604,8 @@ footer { padding: 4rem 2.5rem; text-align: center; border-top: 1px solid var(--b
       <div class="field"><label>Doctor ID or Email</label><input type="text" id="hl-user" placeholder="DR-123 or email"/></div>
       <div class="field"><label>Hospital Code</label><input type="text" id="hl-code" placeholder="HOSP-001"/></div>
       <div class="field"><label>Password</label><input type="password" id="hl-pass" placeholder="••••••••"/></div>
-      <button class="cta" onclick="handleAuth('hospital', 'login')">Login to Portal</button>
+      <div id="hl-msg"></div>
+      <button class="cta" id="hl-btn" onclick="handleAuth('hospital', 'login')">Login to Portal</button>
     </div>
   </div>
 </div>
@@ -909,28 +911,69 @@ function checkAuth() {
       switchView('hospital');
     }
   } else {
+    // Keep URL routing if needed, but for SPA we just go to landing
     switchView('landing');
   }
 }
 
-function handleAuth(role, type) {
-  let user = { role };
-  if (role === 'patient') {
-    if (type === 'signup') {
-      user.name = document.getElementById('ps-name').value;
-      user.phone = document.getElementById('ps-phone').value;
-      user.id = 'P-' + Math.random().toString(36).substr(2, 6).toUpperCase();
+async function handleAuth(role, type) {
+  const btn = document.getElementById(role === 'patient' ? (type === 'signup' ? 'ps-btn' : 'pl-btn') : 'hl-btn');
+  const msgId = role === 'patient' ? (type === 'signup' ? 'ps-msg' : 'pl-msg') : 'hl-msg';
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span> Processing...';
+
+  try {
+    let res, data;
+    if (role === 'patient') {
+      if (type === 'signup') {
+        const payload = {
+          name: document.getElementById('ps-name').value,
+          age: document.getElementById('ps-age').value,
+          blood_group: document.getElementById('ps-blood').value,
+          conditions: document.getElementById('ps-cond').value,
+          phone: document.getElementById('ps-phone').value,
+          email: document.getElementById('ps-email').value,
+          password: document.getElementById('ps-pass').value
+        };
+        res = await fetch('/api/patient/signup', {
+          method: 'POST', headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(payload)
+        });
+      } else {
+        res = await fetch('/api/patient/login', {
+          method: 'POST', headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            identifier: document.getElementById('pl-user').value,
+            password: document.getElementById('pl-pass').value
+          })
+        });
+      }
     } else {
-      user.phone = document.getElementById('pl-user').value;
+      res = await fetch('/api/hospital/login', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          hospital_name: document.getElementById('hl-name').value,
+          identifier: document.getElementById('hl-user').value,
+          hospital_code: document.getElementById('hl-code').value,
+          password: document.getElementById('hl-pass').value
+        })
+      });
     }
-    patientId = user.id || user.phone;
-    localStorage.setItem('mediqueue_user', JSON.stringify(user));
-    switchView('patient');
-  } else {
-    user.hospital = document.getElementById('hl-name').value;
-    user.hospitalCode = document.getElementById('hl-code').value;
-    localStorage.setItem('mediqueue_user', JSON.stringify(user));
-    switchView('hospital');
+
+    data = await res.json();
+    if (res.ok) {
+      localStorage.setItem('mediqueue_user', JSON.stringify(data.user));
+      patientId = data.user.id;
+      switchView(role === 'patient' ? 'patient' : 'hospital');
+    } else {
+      showMsg(msgId, 'error', data.error || 'Authentication failed');
+    }
+  } catch (e) {
+    showMsg(msgId, 'error', 'Connection error. Please try again.');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = role === 'patient' ? (type === 'signup' ? 'Create Account' : 'Login to MediQueue') : 'Login to Portal';
   }
 }
 
@@ -1210,7 +1253,7 @@ async function triggerCascade() {
           <div class="cascade-rank">${i+1}</div>
           <span style="font-weight:700">${p.name}</span>
         </div>
-        <span class="badge-demo ${p.status}">${p.status}</span>
+        <span class="badge-demo ${p.status.toLowerCase()}">${p.status}</span>
       </div>
       <div style="display:flex; justify-content:space-between; width:100%; font-size:0.75rem; color:var(--muted)">
         <span>ID: ${p.bookingId} • ${p.distance}</span>
