@@ -328,7 +328,7 @@ nav {
   font-size: 0.7rem; font-weight: 700; text-align: center;
   text-transform: uppercase; letter-spacing: 0.4px;
 }
-.status-pill.booked { background: var(--teal-3); color: var(--teal); }
+.status-pill.booked, .status-pill.notified { background: var(--teal-3); color: var(--teal); }
 .status-pill.present { background: var(--success-light); color: var(--success); }
 .status-pill.missed { background: var(--danger-light); color: var(--danger); }
 
@@ -521,9 +521,9 @@ footer { padding: 4rem 2.5rem; text-align: center; border-top: 1px solid var(--b
       <h1 class="hero-h1" style="text-align:left; font-size: clamp(2rem, 5vw, 3.5rem); margin-bottom: 1rem;">Smart hospital<br>queuing <span>simplified.</span></h1>
       <p class="hero-p" style="text-align:left; margin-left:0; margin-bottom: 2rem;">Skip the waiting room. Track your position in real-time and get notified exactly when to leave your home.</p>
       <div class="hero-ctas" style="justify-content:flex-start;">
-        <button class="hero-btn primary" onclick="switchView('patient-login')">I'm a Patient</button>
-        <button class="hero-btn outline" onclick="switchView('hospital-login')">I'm a Doctor / Hospital Staff</button>
-        <button class="hero-btn outline" onclick="tryDemo()" style="border-color: var(--teal); color: var(--teal)">Try Demo</button>
+        <button class="hero-btn primary" onclick="gotoPath('/patient/login')">I'm a Patient</button>
+        <button class="hero-btn outline" onclick="gotoPath('/hospital/login')">I'm a Doctor / Hospital Staff</button>
+        <button class="hero-btn outline" id="btn-try-demo" onclick="tryDemo()" style="border-color: var(--teal); color: var(--teal)">Try Demo</button>
       </div>
 
       <div style="margin-top: 4rem; display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
@@ -899,38 +899,120 @@ function switchView(v) {
   if (v === 'hospital') loadQueue();
 }
 
+const routes = {
+  '/': 'landing',
+  '/patient/login': 'patient-login',
+  '/patient/signup': 'patient-signup',
+  '/hospital/login': 'hospital-login',
+  '/patient/dashboard': 'patient',
+  '/hospital/dashboard': 'hospital'
+};
+
+function gotoPath(path, push = true) {
+  const view = routes[path] || 'landing';
+
+  // Basic Auth Guard
+  const user = JSON.parse(localStorage.getItem('mediqueue_user'));
+  if (path.includes('dashboard') && !user) {
+    return gotoPath('/patient/login');
+  }
+
+  if (push) history.pushState({path}, '', path);
+  switchView(view);
+}
+
+window.onpopstate = (e) => {
+  if (e.state && e.state.path) gotoPath(e.state.path, false);
+  else gotoPath('/', false);
+};
+
 function checkAuth() {
   const user = JSON.parse(localStorage.getItem('mediqueue_user'));
+  const path = window.location.pathname;
+
   if (user) {
-    if (user.role === 'patient') {
-      patientId = user.id || user.phone;
-      switchView('patient');
-    } else if (user.role === 'hospital') {
-      switchView('hospital');
+    if (path === '/' || path.includes('login') || path.includes('signup')) {
+      gotoPath(user.role === 'patient' ? '/patient/dashboard' : '/hospital/dashboard');
+    } else {
+      gotoPath(path, false);
     }
   } else {
-    switchView('landing');
+    gotoPath(path, false);
   }
 }
 
-function handleAuth(role, type) {
-  let user = { role };
+async function handleAuth(role, type) {
   if (role === 'patient') {
     if (type === 'signup') {
-      user.name = document.getElementById('ps-name').value;
-      user.phone = document.getElementById('ps-phone').value;
-      user.id = 'P-' + Math.random().toString(36).substr(2, 6).toUpperCase();
+      const name = document.getElementById('ps-name').value;
+      const age = document.getElementById('ps-age').value;
+      const blood_group = document.getElementById('ps-blood').value;
+      const conditions = document.getElementById('ps-cond').value;
+      const phone = document.getElementById('ps-phone').value;
+      const email = document.getElementById('ps-email').value;
+      const password = document.getElementById('ps-pass').value;
+
+      try {
+        const res = await fetch('/api/patient/signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, age, blood_group, conditions, phone, email, password })
+        });
+        const data = await res.json();
+        if (data.user) {
+          localStorage.setItem('mediqueue_user', JSON.stringify(data.user));
+          patientId = data.user.id;
+          gotoPath('/patient/dashboard');
+        } else {
+          alert(data.error || 'Signup failed');
+        }
+      } catch (e) {
+        alert('Server error');
+      }
     } else {
-      user.phone = document.getElementById('pl-user').value;
+      const identifier = document.getElementById('pl-user').value;
+      const password = document.getElementById('pl-pass').value;
+
+      try {
+        const res = await fetch('/api/patient/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ identifier, password })
+        });
+        const data = await res.json();
+        if (data.user) {
+          localStorage.setItem('mediqueue_user', JSON.stringify(data.user));
+          patientId = data.user.id;
+          gotoPath('/patient/dashboard');
+        } else {
+          alert(data.error || 'Login failed');
+        }
+      } catch (e) {
+        alert('Server error');
+      }
     }
-    patientId = user.id || user.phone;
-    localStorage.setItem('mediqueue_user', JSON.stringify(user));
-    switchView('patient');
   } else {
-    user.hospital = document.getElementById('hl-name').value;
-    user.hospitalCode = document.getElementById('hl-code').value;
-    localStorage.setItem('mediqueue_user', JSON.stringify(user));
-    switchView('hospital');
+    const hospital_name = document.getElementById('hl-name').value;
+    const identifier = document.getElementById('hl-user').value;
+    const hospital_code = document.getElementById('hl-code').value;
+    const password = document.getElementById('hl-pass').value;
+
+    try {
+      const res = await fetch('/api/hospital/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ hospital_name, identifier, hospital_code, password })
+      });
+      const data = await res.json();
+      if (data.user) {
+        localStorage.setItem('mediqueue_user', JSON.stringify(data.user));
+        gotoPath('/hospital/dashboard');
+      } else {
+        alert(data.error || 'Login failed');
+      }
+    } catch (e) {
+      alert('Server error');
+    }
   }
 }
 
@@ -1048,7 +1130,8 @@ function tryDemo() {
   };
   localStorage.setItem('mediqueue_user', JSON.stringify(demoUser));
   patientId = demoUser.id;
-  switchView('patient');
+  gotoPath('/patient/dashboard');
+
   // Fill some demo data
   document.getElementById('p-name').value = demoUser.name;
   document.getElementById('p-phone').value = demoUser.phone;
@@ -1198,9 +1281,9 @@ async function triggerCascade() {
 
   const div = document.getElementById('cascade-result');
   const demoResults = [
-    { name: "Ravi Kumar", bookingId: "MQ-2847", distance: "0.4 km", status: "notified", eta: "~5 min" },
-    { name: "Sunita Devi", bookingId: "MQ-1193", distance: "1.1 km", status: "pending", eta: "~12 min" },
-    { name: "Arjun Reddy", bookingId: "MQ-3305", distance: "2.3 km", status: "standby", eta: "~20 min" }
+    { name: "Ravi Kumar", bookingId: "MQ-2847", distance: "0.4 km", status: "Notified", eta: "~5 min" },
+    { name: "Sunita Devi", bookingId: "MQ-1193", distance: "1.1 km", status: "Pending", eta: "~12 min" },
+    { name: "Arjun Reddy", bookingId: "MQ-3305", distance: "2.3 km", status: "Standby", eta: "~20 min" }
   ];
 
   div.innerHTML = demoResults.map((p,i) => `
@@ -1210,7 +1293,7 @@ async function triggerCascade() {
           <div class="cascade-rank">${i+1}</div>
           <span style="font-weight:700">${p.name}</span>
         </div>
-        <span class="badge-demo ${p.status}">${p.status}</span>
+        <span class="badge-demo ${p.status.toLowerCase()}">${p.status}</span>
       </div>
       <div style="display:flex; justify-content:space-between; width:100%; font-size:0.75rem; color:var(--muted)">
         <span>ID: ${p.bookingId} • ${p.distance}</span>
