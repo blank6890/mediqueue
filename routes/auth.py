@@ -101,5 +101,78 @@ def get_user(phone, role):
     user = db.users.find_one({"phone": phone, "role": role})
     if not user:
         return jsonify({"error": "User not found"}), 404
-    user['id'] = user.pop('_id')
+    user['id'] = str(user.pop('_id'))
     return jsonify(user)
+
+@auth_bp.route('/api/patient/signup', methods=['POST'])
+def patient_signup():
+    body = request.get_json()
+    required = ['name', 'age', 'blood_group', 'phone', 'email', 'password']
+    for f in required:
+        if not body.get(f):
+            return jsonify({"error": f"{f} is required"}), 400
+
+    db = get_db()
+    if db.users.find_one({"$or": [{"phone": body['phone']}, {"email": body['email']}], "role": "patient"}):
+        return jsonify({"error": "User already exists"}), 400
+
+    user = {
+        "name": body['name'],
+        "age": body['age'],
+        "blood_group": body['blood_group'],
+        "chronic_conditions": body.get('chronic_conditions', ''),
+        "phone": body['phone'],
+        "email": body['email'],
+        "password": body['password'], # Plaintext for prototype
+        "role": "patient",
+        "created_at": time.time()
+    }
+    result = db.users.insert_one(user)
+    user['id'] = str(result.inserted_id)
+    del user['_id']
+    del user['password']
+    return jsonify({"message": "Signup successful", "user": user}), 201
+
+@auth_bp.route('/api/patient/login', methods=['POST'])
+def patient_login():
+    body = request.get_json()
+    identifier = body.get('identifier') # email or phone
+    password = body.get('password')
+
+    if not identifier or not password:
+        return jsonify({"error": "Identifier and password required"}), 400
+
+    db = get_db()
+    user = db.users.find_one({
+        "$or": [{"phone": identifier}, {"email": identifier}],
+        "role": "patient",
+        "password": password
+    })
+
+    if not user:
+        return jsonify({"error": "Invalid credentials"}), 401
+
+    user['id'] = str(user.pop('_id'))
+    del user['password']
+    return jsonify({"message": "Login successful", "user": user})
+
+@auth_bp.route('/api/hospital/login', methods=['POST'])
+def hospital_login():
+    body = request.get_json()
+    hospital_name = body.get('hospital_name')
+    identifier = body.get('identifier') # Doctor ID or Email
+    hospital_code = body.get('hospital_code')
+    password = body.get('password')
+
+    if not all([hospital_name, identifier, hospital_code, password]):
+        return jsonify({"error": "All fields are required"}), 400
+
+    # Mock hospital login for prototype
+    # In a real app, we would verify the hospital_code exists and the user is linked to it
+    user = {
+        "hospital_name": hospital_name,
+        "doctor_id": identifier,
+        "hospital_code": hospital_code,
+        "role": "hospital"
+    }
+    return jsonify({"message": "Login successful", "user": user})
