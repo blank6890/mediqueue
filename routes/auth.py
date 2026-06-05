@@ -4,6 +4,7 @@ from twilio.rest import Client
 import random
 import time
 import os
+import uuid
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -11,7 +12,10 @@ TWILIO_SID = os.environ.get("TWILIO_SID")
 TWILIO_TOKEN = os.environ.get("TWILIO_TOKEN")
 TWILIO_PHONE = os.environ.get("TWILIO_PHONE")
 
-twilio = Client(TWILIO_SID, TWILIO_TOKEN)
+# Initialize Twilio only if credentials are provided
+twilio = None
+if TWILIO_SID and TWILIO_TOKEN:
+    twilio = Client(TWILIO_SID, TWILIO_TOKEN)
 
 def generate_otp():
     return str(random.randint(100000, 999999))
@@ -38,15 +42,19 @@ def send_otp():
         upsert=True
     )
 
-    try:
-        twilio.messages.create(
-            body=f"Your MediQueue OTP is: {otp}. Valid for 5 minutes. Do not share this with anyone.",
-            from_=TWILIO_PHONE,
-            to=phone
-        )
-        return jsonify({"message": "OTP sent successfully", "phone": phone})
-    except Exception as e:
-        return jsonify({"error": "Failed to send OTP: " + str(e)}), 500
+    if twilio:
+        try:
+            twilio.messages.create(
+                body=f"Your MediQueue OTP is: {otp}. Valid for 5 minutes. Do not share this with anyone.",
+                from_=TWILIO_PHONE,
+                to=phone
+            )
+            return jsonify({"message": "OTP sent successfully", "phone": phone})
+        except Exception as e:
+            return jsonify({"error": "Failed to send OTP: " + str(e)}), 500
+    else:
+        # Mock successful send for prototype if Twilio not configured
+        return jsonify({"message": "Twilio not configured. OTP (Mock): " + otp, "phone": phone, "otp": otp})
 
 
 @auth_bp.route('/verify-otp', methods=['POST'])
@@ -88,12 +96,100 @@ def verify_otp():
     # Clean up OTP
     db.otp_store.delete_one({"phone": phone, "role": role})
 
-    user['id'] = user.pop('_id')
+    user['id'] = str(user.pop('_id'))
     return jsonify({
         "message": "Login successful",
         "user": user
     })
 
+# --- New Authentication Routes for Prototype ---
+
+@auth_bp.route('/patient/signup', methods=['POST'])
+def patient_signup():
+    body = request.get_json()
+    required = ['name', 'age', 'blood_group', 'phone', 'email', 'password']
+    for f in required:
+        if not body.get(f):
+            return jsonify({"error": f"Missing field: {f}"}), 400
+
+    db = get_db()
+
+    # Check if user already exists
+    if db.patients.find_one({"$or": [{"phone": body['phone']}, {"email": body['email']}]}):
+        return jsonify({"error": "User with this phone or email already exists"}), 400
+
+    patient_id = "P-" + str(uuid.uuid4())[:6].upper()
+    patient = {
+        "_id": patient_id,
+        "name": body['name'],
+        "age": body['age'],
+        "blood_group": body['blood_group'],
+        "conditions": body.get('conditions', ''),
+        "phone": body['phone'],
+        "email": body['email'],
+        "password": body['password'], # Plaintext for prototype
+        "role": "patient",
+        "created_at": time.time()
+    }
+
+    db.patients.insert_one(patient)
+
+    # Also create a user record for generic auth
+    db.users.insert_one({
+        "_id": patient_id,
+        "phone": body['phone'],
+        "email": body['email'],
+        "role": "patient",
+        "name": body['name']
+    })
+
+    patient['id'] = str(patient.pop('_id'))
+    patient.pop('password', None)
+    return jsonify({"message": "Signup successful", "user": patient}), 201
+
+@auth_bp.route('/patient/login', methods=['POST'])
+def patient_login():
+    body = request.get_json()
+    user_input = body.get('user') # phone or email
+    password = body.get('password')
+
+    if not user_input or not password:
+        return jsonify({"error": "Username and password required"}), 400
+
+    db = get_db()
+    patient = db.patients.find_one({
+        "$or": [{"phone": user_input}, {"email": user_input}],
+        "password": password
+    })
+
+    if not patient:
+        return jsonify({"error": "Invalid credentials"}), 401
+
+    patient['id'] = str(patient.pop('_id'))
+    patient.pop('password', None)
+    return jsonify({"message": "Login successful", "user": patient})
+
+@auth_bp.route('/hospital/login', methods=['POST'])
+def hospital_login():
+    body = request.get_json()
+    name = body.get('name')
+    user = body.get('user')
+    code = body.get('code')
+    password = body.get('password')
+
+    if not all([name, user, code, password]):
+        return jsonify({"error": "All fields are required"}), 400
+
+    # Mock success for prototype
+    hospital_user = {
+        "id": "H-" + str(uuid.uuid4())[:6].upper(),
+        "name": name,
+        "doctor_id": user,
+        "hospital_code": code,
+        "role": "hospital"
+    }
+
+    return jsonify({"message": "Hospital login successful", "user": hospital_user})
 
 @auth_bp.route('/get-user/<phone>/<role>', methods=['GET'])
 def get_user(phone, role):
@@ -101,5 +197,5 @@ def get_user(phone, role):
     user = db.users.find_one({"phone": phone, "role": role})
     if not user:
         return jsonify({"error": "User not found"}), 404
-    user['id'] = user.pop('_id')
+    user['id'] = str(user.pop('_id'))
     return jsonify(user)
