@@ -1,105 +1,92 @@
-from flask import Blueprint, request, jsonify, session
+from flask import Blueprint, request, jsonify
 from db import get_db
-from twilio.rest import Client
-import random
 import time
-import os
+import uuid
 
 auth_bp = Blueprint('auth', __name__)
 
-TWILIO_SID = os.environ.get("TWILIO_SID")
-TWILIO_TOKEN = os.environ.get("TWILIO_TOKEN")
-TWILIO_PHONE = os.environ.get("TWILIO_PHONE")
-
-twilio = Client(TWILIO_SID, TWILIO_TOKEN)
-
-def generate_otp():
-    return str(random.randint(100000, 999999))
-
-@auth_bp.route('/send-otp', methods=['POST'])
-def send_otp():
+@auth_bp.route('/patient/signup', methods=['POST'])
+def patient_signup():
     body = request.get_json()
-    phone = body.get('phone')
-    role = body.get('role')  # patient, admin, doctor
-
-    if not phone or not role:
-        return jsonify({"error": "phone and role are required"}), 400
-
-    if role not in ['patient', 'admin', 'doctor']:
-        return jsonify({"error": "Invalid role"}), 400
-
-    otp = generate_otp()
-    expires_at = time.time() + 300  # 5 min expiry
-
     db = get_db()
-    db.otp_store.update_one(
-        {"phone": phone},
-        {"$set": {"phone": phone, "otp": otp, "role": role, "expires_at": expires_at}},
-        upsert=True
-    )
 
-    try:
-        twilio.messages.create(
-            body=f"Your MediQueue OTP is: {otp}. Valid for 5 minutes. Do not share this with anyone.",
-            from_=TWILIO_PHONE,
-            to=phone
-        )
-        return jsonify({"message": "OTP sent successfully", "phone": phone})
-    except Exception as e:
-        return jsonify({"error": "Failed to send OTP: " + str(e)}), 500
+    patient_id = "P-" + str(uuid.uuid4())[:6].upper()
+    patient = {
+        "_id": patient_id,
+        "name": body.get('name'),
+        "age": body.get('age'),
+        "blood_group": body.get('blood_group'),
+        "conditions": body.get('conditions'),
+        "phone": body.get('phone'),
+        "email": body.get('email'),
+        "password": body.get('password'), # Mock auth: plaintext
+        "role": "patient",
+        "created_at": time.time()
+    }
 
+    # Check if user already exists
+    if db.patients.find_one({"$or": [{"phone": patient['phone']}, {"email": patient['email']}]}):
+        return jsonify({"error": "User with this phone or email already exists"}), 400
 
-@auth_bp.route('/verify-otp', methods=['POST'])
-def verify_otp():
-    body = request.get_json()
-    phone = body.get('phone')
-    otp = body.get('otp')
-    role = body.get('role')
-    name = body.get('name', '')
+    db.patients.insert_one(patient)
 
-    if not phone or not otp or not role:
-        return jsonify({"error": "phone, otp and role are required"}), 400
+    # Return user without password
+    user_data = {k: v for k, v in patient.items() if k != 'password'}
+    user_data['id'] = user_data.pop('_id')
 
-    db = get_db()
-    record = db.otp_store.find_one({"phone": phone, "role": role})
-
-    if not record:
-        return jsonify({"error": "OTP not found. Please request a new one."}), 404
-
-    if time.time() > record['expires_at']:
-        return jsonify({"error": "OTP has expired. Please request a new one."}), 400
-
-    if record['otp'] != otp:
-        return jsonify({"error": "Incorrect OTP. Please try again."}), 401
-
-    # OTP verified — create or fetch user
-    user = db.users.find_one({"phone": phone, "role": role})
-    if not user:
-        user_id = phone + "_" + role
-        user = {
-            "_id": user_id,
-            "phone": phone,
-            "role": role,
-            "name": name,
-            "created_at": time.time()
-        }
-        db.users.insert_one(user)
-    
-    # Clean up OTP
-    db.otp_store.delete_one({"phone": phone, "role": role})
-
-    user['id'] = user.pop('_id')
     return jsonify({
-        "message": "Login successful",
-        "user": user
+        "message": "Signup successful",
+        "user": user_data
+    }), 201
+
+@auth_bp.route('/patient/login', methods=['POST'])
+def patient_login():
+    body = request.get_json()
+    user_id = body.get('user') # Phone or Email
+    password = body.get('password')
+
+    if not isinstance(user_id, str) or not isinstance(password, str):
+        return jsonify({"error": "Invalid input format"}), 400
+
+    db = get_db()
+    patient = db.patients.find_one({
+        "$or": [{"phone": user_id}, {"email": user_id}],
+        "password": password
     })
 
+    if not patient:
+        return jsonify({"error": "Invalid credentials"}), 401
 
-@auth_bp.route('/get-user/<phone>/<role>', methods=['GET'])
-def get_user(phone, role):
-    db = get_db()
-    user = db.users.find_one({"phone": phone, "role": role})
-    if not user:
-        return jsonify({"error": "User not found"}), 404
-    user['id'] = user.pop('_id')
-    return jsonify(user)
+    user_data = {k: v for k, v in patient.items() if k != 'password'}
+    user_data['id'] = user_data.pop('_id')
+    
+    return jsonify({
+        "message": "Login successful",
+        "user": user_data
+    })
+
+@auth_bp.route('/hospital/login', methods=['POST'])
+def hospital_login():
+    body = request.get_json()
+    # Hospital Name, Doctor ID or Email, Password, Hospital Code
+    hospital_name = body.get('hospital_name')
+    user_id = body.get('user')
+    password = body.get('password')
+    hospital_code = body.get('hospital_code')
+
+    # Mock hospital login
+    # For prototype, we just accept if all fields are present
+    if not all([hospital_name, user_id, password, hospital_code]):
+        return jsonify({"error": "All fields are required"}), 400
+
+    user = {
+        "id": user_id,
+        "name": hospital_name,
+        "hospital_code": hospital_code,
+        "role": "hospital"
+    }
+
+    return jsonify({
+        "message": "Hospital login successful",
+        "user": user
+    })

@@ -21,8 +21,10 @@ def register_patient():
         "blood_group": body['blood_group'],
         "conditions": body.get('conditions', ''),
         "phone": body.get('phone', ''),
+        "email": body.get('email', ''),
         "lat": body.get('lat', 17.3850),
-        "lng": body.get('lng', 78.4867)
+        "lng": body.get('lng', 78.4867),
+        "role": "patient"
     }
 
     db = get_db()
