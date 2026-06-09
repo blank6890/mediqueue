@@ -470,7 +470,7 @@ footer { padding: 4rem 2.5rem; text-align: center; border-top: 1px solid var(--b
 </head>
 <body>
 
-<script>const API = "";</script>
+<script>const API = "/api";</script>
 
 <nav style="display:none" id="main-nav">
   <div class="logo"><div class="logo-dot"></div>MediQueue</div>
@@ -650,8 +650,14 @@ footer { padding: 4rem 2.5rem; text-align: center; border-top: 1px solid var(--b
               <div class="screen-title">Select your appointment</div>
               <div class="field"><label>Hospital</label>
                 <select id="b-hospital">
-                  <option>Apollo Hospitals</option><option>Yashoda Hospitals</option>
-                  <option>KIMS Hospital</option><option>Care Hospital</option>
+                  <option value="HOSP-001">Apollo Clinic — Jubilee Hills</option>
+                  <option value="HOSP-002">Yashoda Hospital — Secunderabad</option>
+                  <option value="HOSP-003">NIMS Polyclinic — Punjagutta</option>
+                  <option value="HOSP-004">Care Hospital — Banjara Hills</option>
+                  <option value="HOSP-005">Sunshine Hospital — Gachibowli</option>
+                  <option value="HOSP-006">Medicover Hospital — HITEC City</option>
+                  <option value="HOSP-007">Rainbow Children's Hospital</option>
+                  <option value="HOSP-008">Gleneagles Global Hospital</option>
                 </select>
               </div>
               <div class="field"><label>Doctor</label>
@@ -786,8 +792,8 @@ footer { padding: 4rem 2.5rem; text-align: center; border-top: 1px solid var(--b
   <div class="dashboard">
     <div class="dash-top">
       <div>
-        <div class="dash-title">Apollo Hospitals — OPD</div>
-        <div class="dash-sub">Dr. Priya Sharma · General Medicine · Live Queue Management</div>
+        <div class="dash-title" id="h-dash-title">Hospital — OPD</div>
+        <div class="dash-sub" id="h-dash-sub">Live Queue Management</div>
       </div>
       <div class="live-badge">Live</div>
     </div>
@@ -882,7 +888,7 @@ function gotoScreen(n) {
 function nextScreen() { if (cur < TOTAL) gotoScreen(cur + 1); }
 function prevScreen() { if (cur > 1) gotoScreen(cur - 1); }
 
-function switchView(v) {
+function switchView(v, skipPush = false) {
   document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
   const target = document.getElementById('view-' + v);
   if (target) target.classList.add('active');
@@ -896,47 +902,139 @@ function switchView(v) {
     document.getElementById('pill-hospital').classList.toggle('active', v === 'hospital');
   }
 
-  if (v === 'hospital') loadQueue();
+  if (v === 'hospital') {
+    const user = JSON.parse(localStorage.getItem('mediqueue_user'));
+    if (user) {
+      document.getElementById('h-dash-title').textContent = user.hospital;
+      document.getElementById('h-dash-sub').textContent = user.doctor + " · " + user.hospitalCode;
+    }
+    loadQueue();
+  }
+
+  if (!skipPush) {
+    const urlMap = {
+      'landing': '/',
+      'patient-login': '/patient/login',
+      'patient-signup': '/patient/signup',
+      'hospital-login': '/hospital/login',
+      'patient': '/patient/dashboard',
+      'hospital': '/hospital/dashboard'
+    };
+    if (urlMap[v]) {
+      history.pushState({view: v}, '', urlMap[v]);
+    }
+  }
 }
+
+window.onpopstate = function(e) {
+  if (e.state && e.state.view) {
+    switchView(e.state.view, true);
+  } else {
+    const path = window.location.pathname;
+    if (path === '/patient/login') switchView('patient-login', true);
+    else if (path === '/patient/signup') switchView('patient-signup', true);
+    else if (path === '/hospital/login') switchView('hospital-login', true);
+    else if (path === '/patient/dashboard') switchView('patient', true);
+    else if (path === '/hospital/dashboard') switchView('hospital', true);
+    else switchView('landing', true);
+  }
+};
 
 function checkAuth() {
   const user = JSON.parse(localStorage.getItem('mediqueue_user'));
+  const path = window.location.pathname;
+
   if (user) {
     if (user.role === 'patient') {
-      patientId = user.id || user.phone;
-      switchView('patient');
+      patientId = user.id;
+      if (path === '/' || path.includes('/login') || path.includes('/signup')) {
+        switchView('patient');
+        gotoScreen(2);
+      } else {
+        switchView('patient', true);
+        gotoScreen(2);
+      }
     } else if (user.role === 'hospital') {
       switchView('hospital');
     }
   } else {
-    switchView('landing');
+    if (path === '/patient/login') switchView('patient-login', true);
+    else if (path === '/patient/signup') switchView('patient-signup', true);
+    else if (path === '/hospital/login') switchView('hospital-login', true);
+    else switchView('landing', true);
   }
 }
 
-function handleAuth(role, type) {
-  let user = { role };
-  if (role === 'patient') {
-    if (type === 'signup') {
-      user.name = document.getElementById('ps-name').value;
-      user.phone = document.getElementById('ps-phone').value;
-      user.id = 'P-' + Math.random().toString(36).substr(2, 6).toUpperCase();
+async function handleAuth(role, type) {
+  const btn = event.target;
+  const originalText = btn.innerText;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span> Processing...';
+
+  try {
+    let res, data;
+    if (role === 'patient') {
+      if (type === 'signup') {
+        const payload = {
+          name: document.getElementById('ps-name').value,
+          age: parseInt(document.getElementById('ps-age').value),
+          blood_group: document.getElementById('ps-blood').value,
+          conditions: document.getElementById('ps-cond').value,
+          phone: document.getElementById('ps-phone').value,
+          email: document.getElementById('ps-email').value,
+          password: document.getElementById('ps-pass').value
+        };
+        res = await fetch(API + '/patient/signup', {
+          method: 'POST', headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(payload)
+        });
+      } else {
+        const payload = {
+          user_id: document.getElementById('pl-user').value,
+          password: document.getElementById('pl-pass').value
+        };
+        res = await fetch(API + '/patient/login', {
+          method: 'POST', headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(payload)
+        });
+      }
     } else {
-      user.phone = document.getElementById('pl-user').value;
+      const payload = {
+        hospital_name: document.getElementById('hl-name').value,
+        doctor_id: document.getElementById('hl-user').value,
+        hospital_code: document.getElementById('hl-code').value,
+        password: document.getElementById('hl-pass').value
+      };
+      res = await fetch(API + '/hospital/login', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(payload)
+      });
     }
-    patientId = user.id || user.phone;
-    localStorage.setItem('mediqueue_user', JSON.stringify(user));
-    switchView('patient');
-  } else {
-    user.hospital = document.getElementById('hl-name').value;
-    user.hospitalCode = document.getElementById('hl-code').value;
-    localStorage.setItem('mediqueue_user', JSON.stringify(user));
-    switchView('hospital');
+
+    data = await res.json();
+    if (res.ok) {
+      localStorage.setItem('mediqueue_user', JSON.stringify(data.user));
+      if (data.user.role === 'patient') {
+        patientId = data.user.id;
+        switchView('patient');
+        gotoScreen(2);
+      } else {
+        switchView('hospital');
+      }
+    } else {
+      alert(data.error || 'Authentication failed');
+    }
+  } catch (e) {
+    alert('Server error. Please try again.');
+  } finally {
+    btn.disabled = false;
+    btn.innerText = originalText;
   }
 }
 
 function logout() {
   localStorage.removeItem('mediqueue_user');
-  location.reload();
+  switchView('landing');
 }
 
 function haversine(lat1, lon1, lat2, lon2) {
@@ -961,7 +1059,7 @@ async function findNearbyHospitals() {
     const lat = pos.coords.latitude;
     const lng = pos.coords.longitude;
     try {
-      const res = await fetch('/get-hospitals');
+      const res = await fetch(API + '/get-hospitals');
       const hospitals = await res.json();
       const dept = document.getElementById('disc-dept').value;
       const timeSlot = document.getElementById('disc-time').value;
@@ -971,10 +1069,8 @@ async function findNearbyHospitals() {
         distance: haversine(lat, lng, h.location.lat, h.location.lng)
       }));
 
-      // Filter by department
       if (dept) results = results.filter(h => h.departments.includes(dept));
 
-      // Filter by time slot
       if (timeSlot) {
         results = results.filter(h => {
           return h.availableSlots.some(s => {
@@ -995,7 +1091,7 @@ async function findNearbyHospitals() {
         list.innerHTML = '<div style="text-align:center; padding:2rem; color:var(--muted)">No hospitals found matching your criteria.</div>';
       } else {
         list.innerHTML = results.map(h => `
-          <div class="hospital-card" onclick="preFillBooking('${h.name}')">
+          <div class="hospital-card" onclick="preFillBooking('${h.name}', '${h.id}')">
             <div class="h-top">
               <div class="h-name">${h.name}</div>
               <div class="h-dist">${h.distance.toFixed(1)} km</div>
@@ -1018,24 +1114,9 @@ async function findNearbyHospitals() {
   });
 }
 
-function preFillBooking(hName) {
+function preFillBooking(hName, hId) {
   const select = document.getElementById('b-hospital');
-  // Add option if not exists
-  let exists = false;
-  for (let i = 0; i < select.options.length; i++) {
-    if (select.options[i].text === hName) {
-      select.selectedIndex = i;
-      exists = true;
-      break;
-    }
-  }
-  if (!exists) {
-    const opt = document.createElement('option');
-    opt.text = hName;
-    opt.value = hName;
-    select.add(opt);
-    select.value = hName;
-  }
+  select.value = hId;
   gotoScreen(2);
 }
 
@@ -1049,18 +1130,17 @@ function tryDemo() {
   localStorage.setItem('mediqueue_user', JSON.stringify(demoUser));
   patientId = demoUser.id;
   switchView('patient');
-  // Fill some demo data
+
   document.getElementById('p-name').value = demoUser.name;
   document.getElementById('p-phone').value = demoUser.phone;
 
-  // Set demo queue tracking state
   document.getElementById('live-pos').textContent = '3';
   document.getElementById('live-bar').style.width = '75%';
   document.getElementById('live-eta').textContent = 'Approx. 18 min wait';
   document.getElementById('live-slot').textContent = '10:30 AM';
   document.getElementById('live-total').textContent = '8 patients';
 
-  gotoScreen(4); // Start at live queue tracking for demo
+  gotoScreen(4);
 }
 
 function showMsg(id, type, text) {
@@ -1093,13 +1173,15 @@ async function registerPatient() {
     } else {
       showMsg('reg-msg', 'error', data.error || 'Registration failed');
     }
-  } catch(e) { showMsg('reg-msg', 'error', 'Cannot reach server. Is Flask running?'); }
+  } catch(e) { showMsg('reg-msg', 'error', 'Cannot reach server.'); }
   btn.disabled = false; btn.textContent = 'Save Profile →';
 }
 
 async function bookSlot() {
   if (!patientId) { showMsg('book-msg','error','Please register first.'); return; }
-  const hospital = document.getElementById('b-hospital').value;
+  const hSelect = document.getElementById('b-hospital');
+  const hospital = hSelect.options[hSelect.selectedIndex].text;
+  const hospital_id = hSelect.value;
   const doctor = document.getElementById('b-doctor').value;
   const slot_time = document.getElementById('b-time').value;
   const btn = document.getElementById('book-btn');
@@ -1107,7 +1189,7 @@ async function bookSlot() {
   try {
     const res = await fetch(API + '/book-slot', {
       method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({patient_id: patientId, hospital, doctor, slot_time})
+      body: JSON.stringify({patient_id: patientId, hospital, hospital_id, doctor, slot_time})
     });
     const data = await res.json();
     if (data.booking_id) {
@@ -1145,8 +1227,11 @@ async function refreshQueue() {
 }
 
 async function loadQueue() {
+  const user = JSON.parse(localStorage.getItem('mediqueue_user'));
+  const hCode = user ? user.hospitalCode : null;
+
   try {
-    const res = await fetch(API + '/get-queue');
+    const res = await fetch(API + '/get-queue' + (hCode ? '?hospital_id=' + hCode : ''));
     const data = await res.json();
     const q = data.queue;
     document.getElementById('kpi-total').textContent = data.total_in_queue;
@@ -1210,7 +1295,7 @@ async function triggerCascade() {
           <div class="cascade-rank">${i+1}</div>
           <span style="font-weight:700">${p.name}</span>
         </div>
-        <span class="badge-demo ${p.status}">${p.status}</span>
+        <span class="badge-demo ${p.status.toLowerCase()}">${p.status}</span>
       </div>
       <div style="display:flex; justify-content:space-between; width:100%; font-size:0.75rem; color:var(--muted)">
         <span>ID: ${p.bookingId} • ${p.distance}</span>
@@ -1218,7 +1303,6 @@ async function triggerCascade() {
       </div>
     </div>`).join('');
 
-  // Also update queue if possible
   try {
     await fetch(API + '/update-status', {
       method: 'POST', headers: {'Content-Type':'application/json'},

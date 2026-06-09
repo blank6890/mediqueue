@@ -22,13 +22,21 @@ def book_slot():
     if not patient:
         return jsonify({"error": "Patient not found. Register first."}), 404
 
-    position = db.queue.count_documents({"status": {"$in": ["booked", "present"]}}) + 1
+    hospital_id = body.get('hospital_id')
+
+    # Count only for this hospital if provided, otherwise overall (for prototype simplicity)
+    query = {"status": {"$in": ["booked", "present"]}}
+    if hospital_id:
+        query["hospital_id"] = hospital_id
+
+    position = db.queue.count_documents(query) + 1
     booking_id = "MQ-" + str(uuid.uuid4())[:4].upper()
     booking = {
         "_id": booking_id,
         "patient_id": body['patient_id'],
         "patient_name": patient['name'],
         "hospital": body['hospital'],
+        "hospital_id": hospital_id,
         "doctor": body['doctor'],
         "slot_time": body['slot_time'],
         "status": "booked",
@@ -56,7 +64,13 @@ def book_slot():
 @queue_bp.route('/get-queue', methods=['GET'])
 def get_queue():
     db = get_db()
-    active = list(db.queue.find({"status": {"$in": ["booked", "present", "missed"]}}))
+    hospital_id = request.args.get('hospital_id')
+
+    query = {"status": {"$in": ["booked", "present", "missed"]}}
+    if hospital_id:
+        query["hospital_id"] = hospital_id
+
+    active = list(db.queue.find(query))
     for item in active:
         item['booking_id'] = item.pop('_id')
     return jsonify({"total_in_queue": len(active), "queue": active})
