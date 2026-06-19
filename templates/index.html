@@ -328,7 +328,7 @@ nav {
   font-size: 0.7rem; font-weight: 700; text-align: center;
   text-transform: uppercase; letter-spacing: 0.4px;
 }
-.status-pill.booked { background: var(--teal-3); color: var(--teal); }
+.status-pill.booked, .status-pill.notified { background: var(--teal-3); color: var(--teal); }
 .status-pill.present { background: var(--success-light); color: var(--success); }
 .status-pill.missed { background: var(--danger-light); color: var(--danger); }
 
@@ -416,8 +416,8 @@ nav {
 .hero-btn.outline:hover { background: var(--surface); border-color: var(--teal); transform: translateY(-3px); }
 
 /* ── AUTH PAGES ── */
-.auth-view { display: none; min-height: 100vh; background: var(--surface); align-items: center; justify-content: center; padding: 2rem; }
-.auth-view.active { display: flex; }
+.auth-view { display: flex; min-height: 100vh; background: var(--surface); align-items: center; justify-content: center; padding: 2rem; }
+.view:not(.active) .auth-view { display: none !important; }
 .auth-card {
   width: 100%; max-width: 440px;
   background: var(--white); padding: 2.5rem;
@@ -544,7 +544,7 @@ footer { padding: 4rem 2.5rem; text-align: center; border-top: 1px solid var(--b
      PATIENT LOGIN
 ════════════════════════════ -->
 <div class="view" id="view-patient-login">
-  <div class="auth-view active">
+  <div class="auth-view">
     <div class="auth-card">
       <button class="back-link" onclick="switchView('landing')">← Back to home</button>
       <div class="auth-header">
@@ -565,7 +565,7 @@ footer { padding: 4rem 2.5rem; text-align: center; border-top: 1px solid var(--b
      PATIENT SIGNUP
 ════════════════════════════ -->
 <div class="view" id="view-patient-signup">
-  <div class="auth-view active">
+  <div class="auth-view">
     <div class="auth-card">
       <button class="back-link" onclick="switchView('patient-login')">← Back to login</button>
       <div class="auth-header">
@@ -592,7 +592,7 @@ footer { padding: 4rem 2.5rem; text-align: center; border-top: 1px solid var(--b
      HOSPITAL LOGIN
 ════════════════════════════ -->
 <div class="view" id="view-hospital-login">
-  <div class="auth-view active">
+  <div class="auth-view">
     <div class="auth-card">
       <button class="back-link" onclick="switchView('landing')">← Back to home</button>
       <div class="auth-header">
@@ -882,7 +882,7 @@ function gotoScreen(n) {
 function nextScreen() { if (cur < TOTAL) gotoScreen(cur + 1); }
 function prevScreen() { if (cur > 1) gotoScreen(cur - 1); }
 
-function switchView(v) {
+function switchView(v, updateHistory = true) {
   document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
   const target = document.getElementById('view-' + v);
   if (target) target.classList.add('active');
@@ -897,46 +897,134 @@ function switchView(v) {
   }
 
   if (v === 'hospital') loadQueue();
-}
 
-function checkAuth() {
-  const user = JSON.parse(localStorage.getItem('mediqueue_user'));
-  if (user) {
-    if (user.role === 'patient') {
-      patientId = user.id || user.phone;
-      switchView('patient');
-    } else if (user.role === 'hospital') {
-      switchView('hospital');
-    }
-  } else {
-    switchView('landing');
+  if (updateHistory) {
+    const paths = {
+      'landing': '/',
+      'patient-login': '/patient/login',
+      'patient-signup': '/patient/signup',
+      'hospital-login': '/hospital/login',
+      'patient': '/patient/dashboard',
+      'hospital': '/hospital/dashboard'
+    };
+    if (paths[v]) history.pushState({view: v}, '', paths[v]);
   }
 }
 
-function handleAuth(role, type) {
-  let user = { role };
+window.onpopstate = function(e) {
+  if (e.state && e.state.view) {
+    switchView(e.state.view, false);
+  } else {
+    // Default based on path
+    const path = window.location.pathname;
+    if (path === '/patient/login') switchView('patient-login', false);
+    else if (path === '/patient/signup') switchView('patient-signup', false);
+    else if (path === '/hospital/login') switchView('hospital-login', false);
+    else if (path === '/patient/dashboard') switchView('patient', false);
+    else if (path === '/hospital/dashboard') switchView('hospital', false);
+    else switchView('landing', false);
+  }
+};
+
+function checkAuth() {
+  const user = JSON.parse(localStorage.getItem('mediqueue_user'));
+  const path = window.location.pathname;
+
+  if (user) {
+    if (user.role === 'patient') {
+      patientId = user.id;
+      if (path === '/patient/dashboard' || path === '/') switchView('patient');
+      else switchView(getViewFromPath(path));
+    } else if (user.role === 'hospital') {
+      if (path === '/hospital/dashboard' || path === '/') switchView('hospital');
+      else switchView(getViewFromPath(path));
+    }
+  } else {
+    switchView(getViewFromPath(path));
+  }
+}
+
+function getViewFromPath(path) {
+  if (path === '/patient/login') return 'patient-login';
+  if (path === '/patient/signup') return 'patient-signup';
+  if (path === '/hospital/login') return 'hospital-login';
+  if (path === '/patient/dashboard') return 'patient';
+  if (path === '/hospital/dashboard') return 'hospital';
+  return 'landing';
+}
+
+async function handleAuth(role, type) {
   if (role === 'patient') {
     if (type === 'signup') {
-      user.name = document.getElementById('ps-name').value;
-      user.phone = document.getElementById('ps-phone').value;
-      user.id = 'P-' + Math.random().toString(36).substr(2, 6).toUpperCase();
+      const name = document.getElementById('ps-name').value;
+      const age = document.getElementById('ps-age').value;
+      const blood_group = document.getElementById('ps-blood').value;
+      const conditions = document.getElementById('ps-cond').value;
+      const phone = document.getElementById('ps-phone').value;
+      const email = document.getElementById('ps-email').value;
+      const password = document.getElementById('ps-pass').value;
+
+      try {
+        const res = await fetch('/api/patient/signup', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({name, age: parseInt(age), blood_group, conditions, phone, email, password})
+        });
+        const data = await res.json();
+        if (data.user) {
+          localStorage.setItem('mediqueue_user', JSON.stringify(data.user));
+          patientId = data.user.id;
+          switchView('patient');
+        } else {
+          alert(data.error || 'Signup failed');
+        }
+      } catch (e) { alert('Server error during signup'); }
     } else {
-      user.phone = document.getElementById('pl-user').value;
+      const user_id = document.getElementById('pl-user').value;
+      const password = document.getElementById('pl-pass').value;
+
+      try {
+        const res = await fetch('/api/patient/login', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({user_id, password})
+        });
+        const data = await res.json();
+        if (data.user) {
+          localStorage.setItem('mediqueue_user', JSON.stringify(data.user));
+          patientId = data.user.id;
+          switchView('patient');
+        } else {
+          alert(data.error || 'Login failed');
+        }
+      } catch (e) { alert('Server error during login'); }
     }
-    patientId = user.id || user.phone;
-    localStorage.setItem('mediqueue_user', JSON.stringify(user));
-    switchView('patient');
   } else {
-    user.hospital = document.getElementById('hl-name').value;
-    user.hospitalCode = document.getElementById('hl-code').value;
-    localStorage.setItem('mediqueue_user', JSON.stringify(user));
-    switchView('hospital');
+    const hospital_name = document.getElementById('hl-name').value;
+    const doctor_id = document.getElementById('hl-user').value;
+    const hospital_code = document.getElementById('hl-code').value;
+    const password = document.getElementById('hl-pass').value;
+
+    try {
+      const res = await fetch('/api/hospital/login', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({hospital_name, doctor_id, hospital_code, password})
+      });
+      const data = await res.json();
+      if (data.user) {
+        localStorage.setItem('mediqueue_user', JSON.stringify(data.user));
+        switchView('hospital');
+      } else {
+        alert(data.error || 'Login failed');
+      }
+    } catch (e) { alert('Server error during hospital login'); }
   }
 }
 
 function logout() {
   localStorage.removeItem('mediqueue_user');
-  location.reload();
+  switchView('landing');
 }
 
 function haversine(lat1, lon1, lat2, lon2) {
@@ -995,7 +1083,7 @@ async function findNearbyHospitals() {
         list.innerHTML = '<div style="text-align:center; padding:2rem; color:var(--muted)">No hospitals found matching your criteria.</div>';
       } else {
         list.innerHTML = results.map(h => `
-          <div class="hospital-card" onclick="preFillBooking('${h.name}')">
+          <div class="hospital-card" onclick="preFillBooking('${h.name}', '${h.id}')">
             <div class="h-top">
               <div class="h-name">${h.name}</div>
               <div class="h-dist">${h.distance.toFixed(1)} km</div>
@@ -1018,7 +1106,7 @@ async function findNearbyHospitals() {
   });
 }
 
-function preFillBooking(hName) {
+function preFillBooking(hName, hId) {
   const select = document.getElementById('b-hospital');
   // Add option if not exists
   let exists = false;
@@ -1198,9 +1286,9 @@ async function triggerCascade() {
 
   const div = document.getElementById('cascade-result');
   const demoResults = [
-    { name: "Ravi Kumar", bookingId: "MQ-2847", distance: "0.4 km", status: "notified", eta: "~5 min" },
-    { name: "Sunita Devi", bookingId: "MQ-1193", distance: "1.1 km", status: "pending", eta: "~12 min" },
-    { name: "Arjun Reddy", bookingId: "MQ-3305", distance: "2.3 km", status: "standby", eta: "~20 min" }
+    { name: "Ravi Kumar", bookingId: "MQ-2847", distance: "0.4 km", status: "Notified", eta: "~5 min" },
+    { name: "Sunita Devi", bookingId: "MQ-1193", distance: "1.1 km", status: "Pending", eta: "~12 min" },
+    { name: "Arjun Reddy", bookingId: "MQ-3305", distance: "2.3 km", status: "Standby", eta: "~20 min" }
   ];
 
   div.innerHTML = demoResults.map((p,i) => `
@@ -1210,7 +1298,7 @@ async function triggerCascade() {
           <div class="cascade-rank">${i+1}</div>
           <span style="font-weight:700">${p.name}</span>
         </div>
-        <span class="badge-demo ${p.status}">${p.status}</span>
+        <span class="badge-demo ${p.status.toLowerCase()}">${p.status}</span>
       </div>
       <div style="display:flex; justify-content:space-between; width:100%; font-size:0.75rem; color:var(--muted)">
         <span>ID: ${p.bookingId} • ${p.distance}</span>
