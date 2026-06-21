@@ -10,6 +10,8 @@ HOSPITALS = [
     "city": "Hyderabad",
     "departments": ["General OPD", "Cardiology", "Orthopaedics", "Dermatology"],
     "doctors": ["Dr. Ramesh Kumar", "Dr. Priya Nair"],
+    "doctor_id": "DR-001",
+    "password": "password123",
     "availableSlots": ["09:00 AM", "09:30 AM", "10:00 AM", "10:30 AM",
                      "11:00 AM", "11:30 AM", "02:00 PM", "02:30 PM"]
   },
@@ -20,6 +22,8 @@ HOSPITALS = [
     "city": "Hyderabad",
     "departments": ["General OPD", "Neurology", "Paediatrics", "ENT"],
     "doctors": ["Dr. Suresh Reddy", "Dr. Anitha Sharma"],
+    "doctor_id": "DR-002",
+    "password": "password123",
     "availableSlots": ["09:00 AM", "10:00 AM", "11:00 AM",
                      "12:00 PM", "03:00 PM", "04:00 PM"]
   },
@@ -30,6 +34,8 @@ HOSPITALS = [
     "city": "Hyderabad",
     "departments": ["General OPD", "Gynaecology", "Ophthalmology"],
     "doctors": ["Dr. Kavitha Rao", "Dr. Arjun Mehta"],
+    "doctor_id": "DR-003",
+    "password": "password123",
     "availableSlots": ["08:30 AM", "09:00 AM", "09:30 AM",
                      "10:00 AM", "02:00 PM", "03:00 PM"]
   },
@@ -40,6 +46,8 @@ HOSPITALS = [
     "city": "Hyderabad",
     "departments": ["General OPD", "Cardiology", "Oncology", "Urology"],
     "doctors": ["Dr. Srinivas Goud", "Dr. Meena Iyer"],
+    "doctor_id": "DR-004",
+    "password": "password123",
     "availableSlots": ["10:00 AM", "10:30 AM", "11:00 AM",
                      "11:30 AM", "04:00 PM", "04:30 PM"]
   },
@@ -50,6 +58,8 @@ HOSPITALS = [
     "city": "Hyderabad",
     "departments": ["General OPD", "Orthopaedics", "Physiotherapy"],
     "doctors": ["Dr. Ravi Teja", "Dr. Pooja Desai"],
+    "doctor_id": "DR-005",
+    "password": "password123",
     "availableSlots": ["09:00 AM", "09:30 AM", "11:00 AM",
                      "11:30 AM", "03:30 PM", "04:00 PM"]
   },
@@ -60,6 +70,8 @@ HOSPITALS = [
     "city": "Hyderabad",
     "departments": ["General OPD", "Dermatology", "Psychiatry", "Endocrinology"],
     "doctors": ["Dr. Lakshmi Prasad", "Dr. Arun Nambiar"],
+    "doctor_id": "DR-006",
+    "password": "password123",
     "availableSlots": ["08:00 AM", "08:30 AM", "09:00 AM",
                      "02:00 PM", "02:30 PM", "05:00 PM"]
   },
@@ -70,6 +82,8 @@ HOSPITALS = [
     "city": "Hyderabad",
     "departments": ["Paediatrics", "Neonatology", "Paediatric Surgery"],
     "doctors": ["Dr. Vandana Reddy", "Dr. Kiran Babu"],
+    "doctor_id": "DR-007",
+    "password": "password123",
     "availableSlots": ["09:00 AM", "10:00 AM", "11:00 AM", "03:00 PM", "04:00 PM"]
   },
   {
@@ -79,6 +93,8 @@ HOSPITALS = [
     "city": "Hyderabad",
     "departments": ["General OPD", "Nephrology", "Transplant", "Gastroenterology"],
     "doctors": ["Dr. Harish Chandra", "Dr. Deepa Srinivasan"],
+    "doctor_id": "DR-008",
+    "password": "password123",
     "availableSlots": ["10:00 AM", "10:30 AM", "11:30 AM",
                      "12:00 PM", "03:00 PM", "03:30 PM"]
   }
