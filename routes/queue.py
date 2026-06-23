@@ -18,7 +18,7 @@ def book_slot():
             return jsonify({"error": f"Missing field: {field}"}), 400
 
     db = get_db()
-    patient = db.patients.find_one({"_id": body['patient_id']})
+    patient = db.users.find_one({"_id": body['patient_id']})
     if not patient:
         return jsonify({"error": "Patient not found. Register first."}), 404
 

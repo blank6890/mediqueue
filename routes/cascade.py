@@ -54,7 +54,7 @@ def trigger_cascade():
     if not booked_patient_ids:
         return jsonify({"message": "No available patients to fill the slot", "cascade": []}), 200
 
-    available_patients = list(db.patients.find({"_id": {"$in": booked_patient_ids}}))
+    available_patients = list(db.users.find({"_id": {"$in": booked_patient_ids}}))
     cascade_order = find_nearest_patients(hospital_lat, hospital_lng, available_patients)
 
     return jsonify({
