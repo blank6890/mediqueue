@@ -26,7 +26,7 @@ def register_patient():
     }
 
     db = get_db()
-    db.patients.insert_one(patient)
+    db.users.insert_one(patient)
 
     return jsonify({
         "message": "Patient registered successfully",
@@ -38,7 +38,7 @@ def register_patient():
 @patients_bp.route('/get-patient/<patient_id>', methods=['GET'])
 def get_patient(patient_id):
     db = get_db()
-    patient = db.patients.find_one({"_id": patient_id})
+    patient = db.users.find_one({"_id": patient_id})
     if not patient:
         return jsonify({"error": "Patient not found"}), 404
     patient['id'] = patient.pop('_id')
