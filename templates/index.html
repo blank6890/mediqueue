@@ -328,7 +328,7 @@ nav {
   font-size: 0.7rem; font-weight: 700; text-align: center;
   text-transform: uppercase; letter-spacing: 0.4px;
 }
-.status-pill.booked { background: var(--teal-3); color: var(--teal); }
+.status-pill.booked { background: var(--teal); color: white; }
 .status-pill.present { background: var(--success-light); color: var(--success); }
 .status-pill.missed { background: var(--danger-light); color: var(--danger); }
 
@@ -470,7 +470,7 @@ footer { padding: 4rem 2.5rem; text-align: center; border-top: 1px solid var(--b
 </head>
 <body>
 
-<script>const API = "";</script>
+<script>const API = "/api";</script>
 
 <nav style="display:none" id="main-nav">
   <div class="logo"><div class="logo-dot"></div>MediQueue</div>
@@ -693,7 +693,16 @@ footer { padding: 4rem 2.5rem; text-align: center; border-top: 1px solid var(--b
             <div class="screen-body">
               <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:1rem">
                 <div class="field"><label>Dept</label>
-                  <select id="disc-dept" onchange="findNearbyHospitals()"><option value="">All</option><option>General OPD</option><option>Cardiology</option><option>Orthopaedics</option></select>
+                  <select id="disc-dept" onchange="findNearbyHospitals()">
+                    <option value="">All Specialties</option>
+                    <option>General OPD</option>
+                    <option>Cardiology</option>
+                    <option>Orthopaedics</option>
+                    <option>Paediatrics</option>
+                    <option>Dermatology</option>
+                    <option>Neurology</option>
+                    <option>Gynaecology</option>
+                  </select>
                 </div>
                 <div class="field"><label>Time</label>
                   <select id="disc-time" onchange="findNearbyHospitals()"><option value="">Any</option><option value="morning">Morning</option><option value="afternoon">Afternoon</option><option value="evening">Evening</option></select>
@@ -882,7 +891,7 @@ function gotoScreen(n) {
 function nextScreen() { if (cur < TOTAL) gotoScreen(cur + 1); }
 function prevScreen() { if (cur > 1) gotoScreen(cur - 1); }
 
-function switchView(v) {
+function switchView(v, updateUrl = true) {
   document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
   const target = document.getElementById('view-' + v);
   if (target) target.classList.add('active');
@@ -897,40 +906,105 @@ function switchView(v) {
   }
 
   if (v === 'hospital') loadQueue();
+
+  if (updateUrl) {
+    const path = v === 'landing' ? '/' : (v === 'patient' ? '/patient/dashboard' : (v === 'hospital' ? '/hospital/dashboard' : (v === 'patient-login' ? '/patient/login' : (v === 'patient-signup' ? '/patient/signup' : (v === 'hospital-login' ? '/hospital/login' : `/${v.replace('-', '/')}`)))));
+    window.history.pushState({ view: v }, '', path);
+  }
 }
 
 function checkAuth() {
   const user = JSON.parse(localStorage.getItem('mediqueue_user'));
+  const path = window.location.pathname;
+
+  let targetView = 'landing';
+  if (path === '/patient/login') targetView = 'patient-login';
+  else if (path === '/patient/signup') targetView = 'patient-signup';
+  else if (path === '/hospital/login') targetView = 'hospital-login';
+  else if (path === '/patient/dashboard') targetView = 'patient';
+  else if (path === '/hospital/dashboard') targetView = 'hospital';
+
   if (user) {
     if (user.role === 'patient') {
-      patientId = user.id || user.phone;
-      switchView('patient');
+      patientId = user.id;
+      if (targetView === 'landing' || targetView.includes('login') || targetView.includes('signup')) {
+        switchView('patient');
+      } else {
+        switchView(targetView, false);
+      }
     } else if (user.role === 'hospital') {
-      switchView('hospital');
+      if (targetView === 'landing' || targetView.includes('login') || targetView.includes('signup')) {
+        switchView('hospital');
+      } else {
+        switchView(targetView, false);
+      }
     }
   } else {
-    switchView('landing');
+    if (['patient-login', 'patient-signup', 'hospital-login'].includes(targetView)) {
+      switchView(targetView, false);
+    } else {
+      switchView('landing', false);
+    }
   }
 }
 
-function handleAuth(role, type) {
-  let user = { role };
+window.onpopstate = (event) => {
+  if (event.state && event.state.view) {
+    switchView(event.state.view, false);
+  } else {
+    checkAuth();
+  }
+};
+
+async function handleAuth(role, type) {
+  let payload = {};
+  let endpoint = "";
+
   if (role === 'patient') {
     if (type === 'signup') {
-      user.name = document.getElementById('ps-name').value;
-      user.phone = document.getElementById('ps-phone').value;
-      user.id = 'P-' + Math.random().toString(36).substr(2, 6).toUpperCase();
+      endpoint = "/patient/signup";
+      payload = {
+        name: document.getElementById('ps-name').value,
+        age: document.getElementById('ps-age').value,
+        blood_group: document.getElementById('ps-blood').value,
+        conditions: document.getElementById('ps-cond').value,
+        phone: document.getElementById('ps-phone').value,
+        email: document.getElementById('ps-email').value,
+        password: document.getElementById('ps-pass').value
+      };
     } else {
-      user.phone = document.getElementById('pl-user').value;
+      endpoint = "/patient/login";
+      payload = {
+        user: document.getElementById('pl-user').value,
+        password: document.getElementById('pl-pass').value
+      };
     }
-    patientId = user.id || user.phone;
-    localStorage.setItem('mediqueue_user', JSON.stringify(user));
-    switchView('patient');
   } else {
-    user.hospital = document.getElementById('hl-name').value;
-    user.hospitalCode = document.getElementById('hl-code').value;
-    localStorage.setItem('mediqueue_user', JSON.stringify(user));
-    switchView('hospital');
+    endpoint = "/hospital/login";
+    payload = {
+      hospital_name: document.getElementById('hl-name').value,
+      user: document.getElementById('hl-user').value,
+      hospital_code: document.getElementById('hl-code').value,
+      password: document.getElementById('hl-pass').value
+    };
+  }
+
+  try {
+    const res = await fetch(API + endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (data.user) {
+      localStorage.setItem('mediqueue_user', JSON.stringify(data.user));
+      patientId = data.user.id;
+      switchView(role === 'patient' ? 'patient' : 'hospital');
+    } else {
+      alert(data.error || "Authentication failed");
+    }
+  } catch (e) {
+    alert("Connection error: " + e.message);
   }
 }
 
@@ -961,7 +1035,7 @@ async function findNearbyHospitals() {
     const lat = pos.coords.latitude;
     const lng = pos.coords.longitude;
     try {
-      const res = await fetch('/get-hospitals');
+      const res = await fetch(API + '/get-hospitals');
       const hospitals = await res.json();
       const dept = document.getElementById('disc-dept').value;
       const timeSlot = document.getElementById('disc-time').value;
@@ -1048,7 +1122,7 @@ function tryDemo() {
   };
   localStorage.setItem('mediqueue_user', JSON.stringify(demoUser));
   patientId = demoUser.id;
-  switchView('patient');
+  switchView('patient', true);
   // Fill some demo data
   document.getElementById('p-name').value = demoUser.name;
   document.getElementById('p-phone').value = demoUser.phone;
@@ -1203,20 +1277,23 @@ async function triggerCascade() {
     { name: "Arjun Reddy", bookingId: "MQ-3305", distance: "2.3 km", status: "standby", eta: "~20 min" }
   ];
 
-  div.innerHTML = demoResults.map((p,i) => `
+  div.innerHTML = demoResults.map((p,i) => {
+    const statusLabel = p.status.charAt(0).toUpperCase() + p.status.slice(1);
+    return `
     <div class="cascade-item" style="flex-direction:column; align-items:flex-start; gap:6px; padding:12px 0;">
       <div style="display:flex; align-items:center; justify-content:space-between; width:100%">
         <div style="display:flex;align-items:center;gap:8px">
           <div class="cascade-rank">${i+1}</div>
           <span style="font-weight:700">${p.name}</span>
         </div>
-        <span class="badge-demo ${p.status}">${p.status}</span>
+        <span class="badge-demo ${p.status}">${statusLabel}</span>
       </div>
       <div style="display:flex; justify-content:space-between; width:100%; font-size:0.75rem; color:var(--muted)">
         <span>ID: ${p.bookingId} • ${p.distance}</span>
         <span style="color:var(--teal); font-weight:600">ETA: ${p.eta}</span>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 
   // Also update queue if possible
   try {
