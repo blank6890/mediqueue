@@ -47,6 +47,7 @@ nav {
   font-size: 1.5rem; font-weight: 800;
   color: var(--ink); letter-spacing: -1px;
   display: flex; align-items: center; gap: 8px;
+  cursor: pointer;
 }
 .logo-dot {
   width: 10px; height: 10px;
@@ -470,10 +471,10 @@ footer { padding: 4rem 2.5rem; text-align: center; border-top: 1px solid var(--b
 </head>
 <body>
 
-<script>const API = "";</script>
+<script>const API = "/api";</script>
 
 <nav style="display:none" id="main-nav">
-  <div class="logo"><div class="logo-dot"></div>MediQueue</div>
+  <div class="logo" onclick="switchView('landing')"><div class="logo-dot"></div>MediQueue</div>
   <div style="display:flex; align-items:center; gap:2rem">
     <div class="nav-pills">
       <button class="pill active" id="pill-patient" onclick="switchView('patient')">Patient App</button>
@@ -517,7 +518,7 @@ footer { padding: 4rem 2.5rem; text-align: center; border-top: 1px solid var(--b
       </div>
     </div>
     <div class="info-side">
-      <div class="logo" style="margin-bottom: 2rem;"><div class="logo-dot"></div>MediQueue</div>
+      <div class="logo" style="margin-bottom: 2rem;" onclick="switchView('landing')"><div class="logo-dot"></div>MediQueue</div>
       <h1 class="hero-h1" style="text-align:left; font-size: clamp(2rem, 5vw, 3.5rem); margin-bottom: 1rem;">Smart hospital<br>queuing <span>simplified.</span></h1>
       <p class="hero-p" style="text-align:left; margin-left:0; margin-bottom: 2rem;">Skip the waiting room. Track your position in real-time and get notified exactly when to leave your home.</p>
       <div class="hero-ctas" style="justify-content:flex-start;">
@@ -609,7 +610,7 @@ footer { padding: 4rem 2.5rem; text-align: center; border-top: 1px solid var(--b
 </div>
 
 <!-- ════════════════════════════
-     PATIENT VIEW
+     PATIENT DASHBOARD (VIEW PATIENT)
 ════════════════════════════ -->
 <div class="view" id="view-patient">
   <div class="patient-layout">
@@ -622,23 +623,20 @@ footer { padding: 4rem 2.5rem; text-align: center; border-top: 1px solid var(--b
         <div class="phone-island"></div>
         <div class="phone-screen">
 
-          <!-- Screen 1: Register -->
+          <!-- Screen 1: Profile (Auto-filled after login) -->
           <div class="screen" id="screen-1">
             <div class="screen-top">
-              <h2>MediQueue</h2>
-              <p>Smart Hospital Queue</p>
+              <h2>My Profile</h2>
+              <p>Verified Information</p>
             </div>
             <div class="screen-body">
-              <div class="screen-title">Create your profile</div>
-              <div class="field"><label>Full Name</label><input id="p-name" type="text" placeholder="Your full name"/></div>
-              <div class="field"><label>Age</label><input id="p-age" type="number" placeholder="Age"/></div>
-              <div class="field"><label>Blood Group</label>
-                <select id="p-blood"><option>B+</option><option>A+</option><option>O+</option><option>AB+</option><option>A-</option><option>O-</option></select>
-              </div>
-              <div class="field"><label>Conditions</label><input id="p-conditions" placeholder="e.g. Hypertension"/></div>
-              <div class="field"><label>Phone</label><input id="p-phone" placeholder="10-digit number"/></div>
-              <div id="reg-msg"></div>
-              <button class="cta" id="reg-btn" onclick="registerPatient()">Save Profile →</button>
+              <div class="screen-title">Account Details</div>
+              <div class="detail-row"><span class="lbl">Name</span><span class="val" id="profile-name">—</span></div>
+              <div class="detail-row"><span class="lbl">Age</span><span class="val" id="profile-age">—</span></div>
+              <div class="detail-row"><span class="lbl">Blood Group</span><span class="val" id="profile-blood">—</span></div>
+              <div class="detail-row"><span class="lbl">Conditions</span><span class="val" id="profile-conditions">—</span></div>
+              <div class="detail-row"><span class="lbl">Phone</span><span class="val" id="profile-phone">—</span></div>
+              <button class="cta" style="margin-top:2rem" onclick="gotoScreen(2)">Book a Slot →</button>
             </div>
           </div>
 
@@ -650,22 +648,28 @@ footer { padding: 4rem 2.5rem; text-align: center; border-top: 1px solid var(--b
               <div class="screen-title">Select your appointment</div>
               <div class="field"><label>Hospital</label>
                 <select id="b-hospital">
-                  <option>Apollo Hospitals</option><option>Yashoda Hospitals</option>
-                  <option>KIMS Hospital</option><option>Care Hospital</option>
+                  <option>Apollo Clinic — Jubilee Hills</option>
+                  <option>Yashoda Hospital — Secunderabad</option>
+                  <option>NIMS Polyclinic — Punjagutta</option>
+                  <option>Care Hospital — Banjara Hills</option>
+                  <option>Sunshine Hospital — Gachibowli</option>
+                  <option>Medicover Hospital — HITEC City</option>
+                  <option>Rainbow Children's Hospital — Banjara Hills</option>
+                  <option>Gleneagles Global Hospital — LB Nagar</option>
                 </select>
               </div>
               <div class="field"><label>Doctor</label>
                 <select id="b-doctor">
-                  <option>Dr. Priya Sharma</option><option>Dr. Ravi Kumar</option><option>Dr. Anita Reddy</option>
+                  <option>Dr. Ramesh Kumar</option><option>Dr. Suresh Reddy</option><option>Dr. Kavitha Rao</option>
                 </select>
               </div>
               <div class="field"><label>Department</label>
-                <select><option>General Medicine</option><option>Cardiology</option><option>Orthopaedics</option></select>
+                <select id="b-dept"><option>General OPD</option><option>Cardiology</option><option>Neurology</option><option>Orthopaedics</option></select>
               </div>
               <div class="field"><label>Time Slot</label>
                 <select id="b-time">
-                  <option>10:00 AM</option><option>10:30 AM</option><option>11:00 AM</option>
-                  <option>11:30 AM</option><option>12:00 PM</option><option>12:30 PM</option>
+                  <option>09:00 AM</option><option>09:30 AM</option><option>10:00 AM</option>
+                  <option>10:30 AM</option><option>11:00 AM</option><option>11:30 AM</option>
                 </select>
               </div>
               <div id="book-msg"></div>
@@ -693,7 +697,18 @@ footer { padding: 4rem 2.5rem; text-align: center; border-top: 1px solid var(--b
             <div class="screen-body">
               <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:1rem">
                 <div class="field"><label>Dept</label>
-                  <select id="disc-dept" onchange="findNearbyHospitals()"><option value="">All</option><option>General OPD</option><option>Cardiology</option><option>Orthopaedics</option></select>
+                  <select id="disc-dept" onchange="findNearbyHospitals()">
+                    <option value="">All</option>
+                    <option>General OPD</option>
+                    <option>Cardiology</option>
+                    <option>Orthopaedics</option>
+                    <option>Dermatology</option>
+                    <option>Neurology</option>
+                    <option>Paediatrics</option>
+                    <option>Gynaecology</option>
+                    <option>Oncology</option>
+                    <option>Nephrology</option>
+                  </select>
                 </div>
                 <div class="field"><label>Time</label>
                   <select id="disc-time" onchange="findNearbyHospitals()"><option value="">Any</option><option value="morning">Morning</option><option value="afternoon">Afternoon</option><option value="evening">Evening</option></select>
@@ -786,8 +801,8 @@ footer { padding: 4rem 2.5rem; text-align: center; border-top: 1px solid var(--b
   <div class="dashboard">
     <div class="dash-top">
       <div>
-        <div class="dash-title">Apollo Hospitals — OPD</div>
-        <div class="dash-sub">Dr. Priya Sharma · General Medicine · Live Queue Management</div>
+        <div class="dash-title" id="dash-h-name">Apollo Hospitals — OPD</div>
+        <div class="dash-sub"><span id="dash-d-name">Dr. Priya Sharma</span> · <span id="dash-h-code">HOSP-001</span> · Live Queue Management</div>
       </div>
       <div class="live-badge">Live</div>
     </div>
@@ -855,7 +870,7 @@ footer { padding: 4rem 2.5rem; text-align: center; border-top: 1px solid var(--b
 </footer>
 
 <script>
-const TOTAL = 4;
+const TOTAL = 5;
 let cur = 1;
 let patientId = null;
 let bookingId = null;
@@ -874,9 +889,10 @@ function buildTrack() {
 }
 
 function gotoScreen(n) {
-  document.getElementById('screen-' + cur).classList.remove('active');
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   cur = n;
-  document.getElementById('screen-' + cur).classList.add('active');
+  const target = document.getElementById('screen-' + cur);
+  if (target) target.classList.add('active');
   buildTrack();
 }
 function nextScreen() { if (cur < TOTAL) gotoScreen(cur + 1); }
@@ -896,47 +912,134 @@ function switchView(v) {
     document.getElementById('pill-hospital').classList.toggle('active', v === 'hospital');
   }
 
+  const path = v === 'landing' ? '/' : v.includes('-') ? `/${v.replace('-','/')}` : `/${v}/dashboard`;
+  if (window.location.pathname !== path) {
+    history.pushState({view: v}, '', path);
+  }
+
   if (v === 'hospital') loadQueue();
+  if (v === 'patient') {
+    loadProfile();
+    buildTrack();
+  }
 }
+
+window.addEventListener('popstate', (e) => {
+  const path = window.location.pathname;
+  if (path === '/') switchView('landing');
+  else if (path === '/patient/login') switchView('patient-login');
+  else if (path === '/patient/signup') switchView('patient-signup');
+  else if (path === '/hospital/login') switchView('hospital-login');
+  else if (path === '/patient/dashboard') switchView('patient');
+  else if (path === '/hospital/dashboard') switchView('hospital');
+});
 
 function checkAuth() {
   const user = JSON.parse(localStorage.getItem('mediqueue_user'));
+  const path = window.location.pathname;
+
   if (user) {
     if (user.role === 'patient') {
-      patientId = user.id || user.phone;
-      switchView('patient');
+      patientId = user.id;
+      if (path === '/' || path.includes('login') || path.includes('signup')) {
+        switchView('patient');
+      } else {
+        switchView(path.replace('/','').replace('/','-').replace('-dashboard',''));
+      }
     } else if (user.role === 'hospital') {
-      switchView('hospital');
+      if (path === '/' || path.includes('login')) {
+        switchView('hospital');
+      } else {
+        switchView('hospital');
+      }
     }
   } else {
-    switchView('landing');
+    if (path === '/patient/login') switchView('patient-login');
+    else if (path === '/patient/signup') switchView('patient-signup');
+    else if (path === '/hospital/login') switchView('hospital-login');
+    else switchView('landing');
   }
 }
 
-function handleAuth(role, type) {
-  let user = { role };
+async function handleAuth(role, type) {
+  const btn = event.target;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span> Loading...';
+
+  let url = type === 'signup' ? `${API}/patient/signup` : role === 'patient' ? `${API}/patient/login` : `${API}/hospital/login`;
+  let body = {};
+
   if (role === 'patient') {
     if (type === 'signup') {
-      user.name = document.getElementById('ps-name').value;
-      user.phone = document.getElementById('ps-phone').value;
-      user.id = 'P-' + Math.random().toString(36).substr(2, 6).toUpperCase();
+      body = {
+        name: document.getElementById('ps-name').value,
+        age: document.getElementById('ps-age').value,
+        blood_group: document.getElementById('ps-blood').value,
+        conditions: document.getElementById('ps-cond').value,
+        phone: document.getElementById('ps-phone').value,
+        email: document.getElementById('ps-email').value,
+        password: document.getElementById('ps-pass').value
+      };
     } else {
-      user.phone = document.getElementById('pl-user').value;
+      body = {
+        user_id: document.getElementById('pl-user').value,
+        password: document.getElementById('pl-pass').value
+      };
     }
-    patientId = user.id || user.phone;
-    localStorage.setItem('mediqueue_user', JSON.stringify(user));
-    switchView('patient');
   } else {
-    user.hospital = document.getElementById('hl-name').value;
-    user.hospitalCode = document.getElementById('hl-code').value;
-    localStorage.setItem('mediqueue_user', JSON.stringify(user));
-    switchView('hospital');
+    body = {
+      hospital_name: document.getElementById('hl-name').value,
+      doctor_id: document.getElementById('hl-user').value,
+      hospital_code: document.getElementById('hl-code').value,
+      password: document.getElementById('hl-pass').value
+    };
   }
+
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    if (data.user) {
+      localStorage.setItem('mediqueue_user', JSON.stringify(data.user));
+      patientId = data.user.id;
+      switchView(role === 'patient' ? 'patient' : 'hospital');
+    } else {
+      alert(data.error || 'Auth failed');
+    }
+  } catch (e) {
+    alert('Server unreachable');
+  }
+  btn.disabled = false;
+  btn.innerHTML = type === 'signup' ? 'Create Account' : role === 'patient' ? 'Login to MediQueue' : 'Login to Portal';
 }
 
 function logout() {
   localStorage.removeItem('mediqueue_user');
-  location.reload();
+  switchView('landing');
+}
+
+function loadProfile() {
+  const user = JSON.parse(localStorage.getItem('mediqueue_user'));
+  if (user && user.role === 'patient') {
+    fetch(`${API}/get-patient/${user.id}`)
+      .then(r => r.json())
+      .then(p => {
+        if (!p.error) {
+          document.getElementById('profile-name').textContent = p.name;
+          document.getElementById('profile-age').textContent = p.age;
+          document.getElementById('profile-blood').textContent = p.blood_group;
+          document.getElementById('profile-conditions').textContent = p.conditions || 'None';
+          document.getElementById('profile-phone').textContent = p.phone;
+        }
+      });
+  } else if (user && user.role === 'hospital') {
+    document.getElementById('dash-h-name').textContent = user.hospital;
+    document.getElementById('dash-d-name').textContent = user.name;
+    document.getElementById('dash-h-code').textContent = user.hospitalCode;
+  }
 }
 
 function haversine(lat1, lon1, lat2, lon2) {
@@ -961,7 +1064,7 @@ async function findNearbyHospitals() {
     const lat = pos.coords.latitude;
     const lng = pos.coords.longitude;
     try {
-      const res = await fetch('/get-hospitals');
+      const res = await fetch(`${API}/get-hospitals`);
       const hospitals = await res.json();
       const dept = document.getElementById('disc-dept').value;
       const timeSlot = document.getElementById('disc-time').value;
@@ -971,19 +1074,19 @@ async function findNearbyHospitals() {
         distance: haversine(lat, lng, h.location.lat, h.location.lng)
       }));
 
-      // Filter by department
       if (dept) results = results.filter(h => h.departments.includes(dept));
 
-      // Filter by time slot
       if (timeSlot) {
         results = results.filter(h => {
           return h.availableSlots.some(s => {
-            const hour = parseInt(s.split(':')[0]);
+            const parts = s.split(':');
+            let hour = parseInt(parts[0]);
             const isPM = s.includes('PM');
-            let h24 = isPM && hour !== 12 ? hour + 12 : !isPM && hour === 12 ? 0 : hour;
-            if (timeSlot === 'morning') return h24 >= 8 && h24 < 12;
-            if (timeSlot === 'afternoon') return h24 >= 12 && h24 < 16;
-            if (timeSlot === 'evening') return h24 >= 16 && h24 < 19;
+            if (isPM && hour !== 12) hour += 12;
+            if (!isPM && hour === 12) hour = 0;
+            if (timeSlot === 'morning') return hour >= 8 && hour < 12;
+            if (timeSlot === 'afternoon') return hour >= 12 && hour < 16;
+            if (timeSlot === 'evening') return hour >= 16 && hour < 19;
             return false;
           });
         });
@@ -1020,7 +1123,6 @@ async function findNearbyHospitals() {
 
 function preFillBooking(hName) {
   const select = document.getElementById('b-hospital');
-  // Add option if not exists
   let exists = false;
   for (let i = 0; i < select.options.length; i++) {
     if (select.options[i].text === hName) {
@@ -1043,93 +1145,68 @@ function tryDemo() {
   const demoUser = {
     role: 'patient',
     name: 'Ravi Kumar',
-    phone: '9876543210',
     id: 'MQ-2847'
   };
   localStorage.setItem('mediqueue_user', JSON.stringify(demoUser));
   patientId = demoUser.id;
   switchView('patient');
-  // Fill some demo data
-  document.getElementById('p-name').value = demoUser.name;
-  document.getElementById('p-phone').value = demoUser.phone;
 
-  // Set demo queue tracking state
+  // Pre-fill tracking for demo
   document.getElementById('live-pos').textContent = '3';
   document.getElementById('live-bar').style.width = '75%';
   document.getElementById('live-eta').textContent = 'Approx. 18 min wait';
   document.getElementById('live-slot').textContent = '10:30 AM';
   document.getElementById('live-total').textContent = '8 patients';
 
-  gotoScreen(4); // Start at live queue tracking for demo
+  gotoScreen(4);
 }
 
 function showMsg(id, type, text) {
-  document.getElementById(id).innerHTML = `<div class="alert-card ${type}">${text}</div>`;
-}
-
-async function registerPatient() {
-  const name = document.getElementById('p-name').value.trim();
-  const age = document.getElementById('p-age').value;
-  if (!name || !age) { showMsg('reg-msg','error','Please fill in name and age.'); return; }
-  const btn = document.getElementById('reg-btn');
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spin"></span> Saving...';
-  try {
-    const res = await fetch(API + '/register-patient', {
-      method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({
-        name, age: parseInt(age),
-        blood_group: document.getElementById('p-blood').value,
-        conditions: document.getElementById('p-conditions').value,
-        phone: document.getElementById('p-phone').value,
-        lat: 17.3850, lng: 78.4867
-      })
-    });
-    const data = await res.json();
-    if (data.patient_id) {
-      patientId = data.patient_id;
-      showMsg('reg-msg', 'success', 'Profile saved! ID: ' + data.patient_id);
-      setTimeout(() => gotoScreen(2), 900);
-    } else {
-      showMsg('reg-msg', 'error', data.error || 'Registration failed');
-    }
-  } catch(e) { showMsg('reg-msg', 'error', 'Cannot reach server. Is Flask running?'); }
-  btn.disabled = false; btn.textContent = 'Save Profile →';
+  const el = document.getElementById(id);
+  if (el) el.innerHTML = `<div class="alert-card ${type}">${text}</div>`;
 }
 
 async function bookSlot() {
-  if (!patientId) { showMsg('book-msg','error','Please register first.'); return; }
-  const hospital = document.getElementById('b-hospital').value;
-  const doctor = document.getElementById('b-doctor').value;
-  const slot_time = document.getElementById('b-time').value;
+  if (!patientId) { alert('Please login first'); return; }
   const btn = document.getElementById('book-btn');
-  btn.disabled = true; btn.innerHTML = '<span class="spin"></span> Booking...';
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span> Booking...';
+
   try {
-    const res = await fetch(API + '/book-slot', {
-      method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({patient_id: patientId, hospital, doctor, slot_time})
+    const res = await fetch(`${API}/book-slot`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        patient_id: patientId,
+        hospital: document.getElementById('b-hospital').value,
+        doctor: document.getElementById('b-doctor').value,
+        slot_time: document.getElementById('b-time').value
+      })
     });
     const data = await res.json();
     if (data.booking_id) {
       bookingId = data.booking_id;
       document.getElementById('qr-img').src = data.qr_code;
       document.getElementById('c-id').textContent = data.booking_id;
-      document.getElementById('c-hospital').textContent = hospital;
-      document.getElementById('c-doctor').textContent = doctor;
-      document.getElementById('c-time').textContent = slot_time;
+      document.getElementById('c-hospital').textContent = document.getElementById('b-hospital').value;
+      document.getElementById('c-doctor').textContent = document.getElementById('b-doctor').value;
+      document.getElementById('c-time').textContent = data.slot_time;
       document.getElementById('c-pos').textContent = '#' + data.position_in_queue;
-      document.getElementById('live-slot').textContent = slot_time;
+      document.getElementById('live-slot').textContent = data.slot_time;
       gotoScreen(3);
     } else {
-      showMsg('book-msg','error', data.error || 'Booking failed');
+      showMsg('book-msg', 'error', data.error || 'Booking failed');
     }
-  } catch(e) { showMsg('book-msg','error','Cannot reach server.'); }
-  btn.disabled = false; btn.textContent = 'Confirm Booking →';
+  } catch (e) {
+    showMsg('book-msg', 'error', 'Server error');
+  }
+  btn.disabled = false;
+  btn.textContent = 'Confirm Booking →';
 }
 
 async function refreshQueue() {
   try {
-    const res = await fetch(API + '/get-queue');
+    const res = await fetch(`${API}/get-queue`);
     const data = await res.json();
     document.getElementById('live-total').textContent = data.total_in_queue + ' patients';
     if (bookingId) {
@@ -1138,15 +1215,15 @@ async function refreshQueue() {
         document.getElementById('live-pos').textContent = mine.position;
         const pct = Math.min(100, Math.round((1/mine.position)*100));
         document.getElementById('live-bar').style.width = pct + '%';
-        document.getElementById('live-eta').textContent = 'Approx. ' + (mine.position * 7) + ' min wait';
+        document.getElementById('live-eta').textContent = `Approx. ${mine.position * 7} min wait`;
       }
     }
-  } catch(e) { document.getElementById('live-eta').textContent = 'Server unreachable'; }
+  } catch (e) {}
 }
 
 async function loadQueue() {
   try {
-    const res = await fetch(API + '/get-queue');
+    const res = await fetch(`${API}/get-queue`);
     const data = await res.json();
     const q = data.queue;
     document.getElementById('kpi-total').textContent = data.total_in_queue;
@@ -1155,8 +1232,11 @@ async function loadQueue() {
     document.getElementById('kpi-missed').textContent = q.filter(b=>b.status==='missed').length;
 
     const list = document.getElementById('queue-list');
-    if (!q.length) { list.innerHTML = '<div style="padding:2rem;text-align:center;color:var(--muted);font-size:0.88rem">No patients in queue yet — register and book a slot using the Patient App!</div>'; return; }
-    list.innerHTML = q.map((b,i) => {
+    if (!q.length) {
+      list.innerHTML = '<div style="padding:2rem;text-align:center;color:var(--muted);font-size:0.88rem">No active patients.</div>';
+      return;
+    }
+    list.innerHTML = q.map(b => {
       const cls = b.status==='present'?'is-present':b.status==='missed'?'is-missed':'';
       const initials = b.patient_name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
       return `<div class="q-row ${cls}">
@@ -1166,24 +1246,22 @@ async function loadQueue() {
         <div class="status-pill ${b.status}">${b.status}</div>
       </div>`;
     }).join('');
-  } catch(e) {
-    document.getElementById('queue-list').innerHTML = '<div style="padding:2rem;text-align:center;color:var(--danger);font-size:0.88rem">Cannot connect to server</div>';
-  }
+  } catch(e) {}
 }
 
 async function updateStatus(status) {
   const id = document.getElementById('action-id').value.trim();
-  if (!id) { showMsg('action-msg','error','Enter a booking ID first'); return; }
+  if (!id) { showMsg('action-msg','error','Enter Booking ID'); return; }
   try {
-    const res = await fetch(API + '/update-status', {
-      method: 'POST', headers: {'Content-Type':'application/json'},
+    const res = await fetch(`${API}/update-status`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({booking_id: id, status})
     });
     const data = await res.json();
     showMsg('action-msg', data.message?'success':'error', data.message||data.error);
-    setTimeout(()=>document.getElementById('action-msg').innerHTML='', 3000);
     loadQueue();
-  } catch(e) { showMsg('action-msg','error','Server error'); }
+  } catch(e) {}
 }
 
 function markPresent() { updateStatus('present'); }
@@ -1191,11 +1269,9 @@ function markDone() { updateStatus('done'); }
 
 async function triggerCascade() {
   const id = document.getElementById('action-id').value.trim();
-  if (!id) { showMsg('action-msg','error','Enter a booking ID first'); return; }
+  if (!id) { showMsg('action-msg','error','Enter Booking ID'); return; }
 
   showMsg('action-msg','success','Cascade triggered!');
-  setTimeout(()=>document.getElementById('action-msg').innerHTML='', 3000);
-
   const div = document.getElementById('cascade-result');
   const demoResults = [
     { name: "Ravi Kumar", bookingId: "MQ-2847", distance: "0.4 km", status: "notified", eta: "~5 min" },
@@ -1210,7 +1286,7 @@ async function triggerCascade() {
           <div class="cascade-rank">${i+1}</div>
           <span style="font-weight:700">${p.name}</span>
         </div>
-        <span class="badge-demo ${p.status}">${p.status}</span>
+        <span class="badge-demo ${p.status}">${p.status.charAt(0).toUpperCase() + p.status.slice(1)}</span>
       </div>
       <div style="display:flex; justify-content:space-between; width:100%; font-size:0.75rem; color:var(--muted)">
         <span>ID: ${p.bookingId} • ${p.distance}</span>
@@ -1218,17 +1294,9 @@ async function triggerCascade() {
       </div>
     </div>`).join('');
 
-  // Also update queue if possible
-  try {
-    await fetch(API + '/update-status', {
-      method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({booking_id: id, status: 'missed'})
-    });
-    loadQueue();
-  } catch(e) {}
+  updateStatus('missed');
 }
 
-buildTrack();
 checkAuth();
 </script>
 </body>
