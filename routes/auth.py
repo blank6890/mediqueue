@@ -102,11 +102,11 @@ def hospital_login():
 
     # For prototype, we'll allow any login but store it if it's new
     db = get_db()
-    user = db.users.find_one({"doctor_id": doctor_id, "role": "hospital"})
+    user = db.users.find_one({"doctor_id": doctor_id, "hospital_code": hospital_code, "role": "hospital"})
 
     if not user:
         user = {
-            "_id": doctor_id + "_hospital",
+            "_id": f"{doctor_id}_{hospital_code}_hospital",
             "doctor_id": doctor_id,
             "hospital_name": hospital_name,
             "hospital_code": hospital_code,
