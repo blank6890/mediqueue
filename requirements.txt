@@ -6,3 +6,5 @@ qrcode
 Pillow
 gunicorn
 certifi
+twilio
+requests

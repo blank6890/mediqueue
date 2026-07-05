@@ -648,28 +648,22 @@ footer { padding: 4rem 2.5rem; text-align: center; border-top: 1px solid var(--b
               <div class="screen-title">Select your appointment</div>
               <div class="field"><label>Hospital</label>
                 <select id="b-hospital">
-                  <option>Apollo Clinic — Jubilee Hills</option>
-                  <option>Yashoda Hospital — Secunderabad</option>
-                  <option>NIMS Polyclinic — Punjagutta</option>
-                  <option>Care Hospital — Banjara Hills</option>
-                  <option>Sunshine Hospital — Gachibowli</option>
-                  <option>Medicover Hospital — HITEC City</option>
-                  <option>Rainbow Children's Hospital — Banjara Hills</option>
-                  <option>Gleneagles Global Hospital — LB Nagar</option>
+                  <option>Loading...</option>
                 </select>
               </div>
               <div class="field"><label>Doctor</label>
                 <select id="b-doctor">
-                  <option>Dr. Ramesh Kumar</option><option>Dr. Suresh Reddy</option><option>Dr. Kavitha Rao</option>
+                  <option>Select hospital first</option>
                 </select>
               </div>
               <div class="field"><label>Department</label>
-                <select id="b-dept"><option>General OPD</option><option>Cardiology</option><option>Neurology</option><option>Orthopaedics</option></select>
+                <select id="b-dept">
+                  <option>Select hospital first</option>
+                </select>
               </div>
               <div class="field"><label>Time Slot</label>
                 <select id="b-time">
-                  <option>09:00 AM</option><option>09:30 AM</option><option>10:00 AM</option>
-                  <option>10:30 AM</option><option>11:00 AM</option><option>11:30 AM</option>
+                  <option>Select hospital first</option>
                 </select>
               </div>
               <div id="book-msg"></div>
@@ -708,6 +702,16 @@ footer { padding: 4rem 2.5rem; text-align: center; border-top: 1px solid var(--b
                     <option>Gynaecology</option>
                     <option>Oncology</option>
                     <option>Nephrology</option>
+                    <option>ENT</option>
+                    <option>Ophthalmology</option>
+                    <option>Urology</option>
+                    <option>Physiotherapy</option>
+                    <option>Psychiatry</option>
+                    <option>Endocrinology</option>
+                    <option>Neonatology</option>
+                    <option>Paediatric Surgery</option>
+                    <option>Transplant</option>
+                    <option>Gastroenterology</option>
                   </select>
                 </div>
                 <div class="field"><label>Time</label>
@@ -920,8 +924,42 @@ function switchView(v) {
   if (v === 'hospital') loadQueue();
   if (v === 'patient') {
     loadProfile();
+    loadHospitals();
     buildTrack();
   }
+}
+
+document.getElementById('b-hospital').addEventListener('change', updateHospitalDetails);
+
+let allHospitals = [];
+
+async function loadHospitals() {
+  try {
+    const res = await fetch(`${API}/get-hospitals`);
+    allHospitals = await res.json();
+    const select = document.getElementById('b-hospital');
+    const currentVal = select.value;
+    select.innerHTML = allHospitals.map(h => `<option value="${h.name}">${h.name}</option>`).join('');
+    if (currentVal && allHospitals.some(h => h.name === currentVal)) {
+      select.value = currentVal;
+    }
+    updateHospitalDetails();
+  } catch (e) { console.error("Failed to load hospitals", e); }
+}
+
+function updateHospitalDetails() {
+  const hName = document.getElementById('b-hospital').value;
+  const h = allHospitals.find(h => h.name === hName);
+  if (!h) return;
+
+  const dSelect = document.getElementById('b-doctor');
+  dSelect.innerHTML = h.doctors.map(d => `<option>${d}</option>`).join('');
+
+  const tSelect = document.getElementById('b-time');
+  tSelect.innerHTML = h.availableSlots.map(s => `<option>${s}</option>`).join('');
+
+  const deptSelect = document.getElementById('b-dept');
+  deptSelect.innerHTML = h.departments.map(d => `<option>${d}</option>`).join('');
 }
 
 window.addEventListener('popstate', (e) => {
@@ -1125,7 +1163,7 @@ function preFillBooking(hName) {
   const select = document.getElementById('b-hospital');
   let exists = false;
   for (let i = 0; i < select.options.length; i++) {
-    if (select.options[i].text === hName) {
+    if (select.options[i].value === hName) {
       select.selectedIndex = i;
       exists = true;
       break;
@@ -1138,6 +1176,7 @@ function preFillBooking(hName) {
     select.add(opt);
     select.value = hName;
   }
+  updateHospitalDetails();
   gotoScreen(2);
 }
 
