@@ -116,7 +116,7 @@ def hospital_login():
             "created_at": time.time()
         }
         db.users.insert_one(user)
-    elif user.get('password') != password:
+    elif user.get('password') != password or user.get('hospital_code') != hospital_code:
         return jsonify({"error": "Invalid credentials"}), 401
 
     return jsonify({
