@@ -647,7 +647,8 @@ footer { padding: 4rem 2.5rem; text-align: center; border-top: 1px solid var(--b
               <button class="cta" onclick="gotoScreen(5)" style="background:var(--white); color:var(--teal); border:1.5px solid var(--teal); margin-bottom:1rem">Find Hospitals Near Me 📍</button>
               <div class="screen-title">Select your appointment</div>
               <div class="field"><label>Hospital</label>
-                <select id="b-hospital">
+                <select id="b-hospital" onchange="updateBookingOptions()">
+                  <option disabled selected value="">Select Hospital</option>
                   <option>Apollo Clinic — Jubilee Hills</option>
                   <option>Yashoda Hospital — Secunderabad</option>
                   <option>NIMS Polyclinic — Punjagutta</option>
@@ -660,11 +661,13 @@ footer { padding: 4rem 2.5rem; text-align: center; border-top: 1px solid var(--b
               </div>
               <div class="field"><label>Doctor</label>
                 <select id="b-doctor">
-                  <option>Dr. Ramesh Kumar</option><option>Dr. Suresh Reddy</option><option>Dr. Kavitha Rao</option>
+                  <option disabled selected value="">Select Doctor</option>
                 </select>
               </div>
               <div class="field"><label>Department</label>
-                <select id="b-dept"><option>General OPD</option><option>Cardiology</option><option>Neurology</option><option>Orthopaedics</option></select>
+                <select id="b-dept">
+                  <option disabled selected value="">Select Department</option>
+                </select>
               </div>
               <div class="field"><label>Time Slot</label>
                 <select id="b-time">
@@ -707,7 +710,17 @@ footer { padding: 4rem 2.5rem; text-align: center; border-top: 1px solid var(--b
                     <option>Paediatrics</option>
                     <option>Gynaecology</option>
                     <option>Oncology</option>
+                    <option>Urology</option>
+                    <option>ENT</option>
+                    <option>Ophthalmology</option>
+                    <option>Physiotherapy</option>
+                    <option>Psychiatry</option>
+                    <option>Endocrinology</option>
+                    <option>Neonatology</option>
+                    <option>Paediatric Surgery</option>
                     <option>Nephrology</option>
+                    <option>Transplant</option>
+                    <option>Gastroenterology</option>
                   </select>
                 </div>
                 <div class="field"><label>Time</label>
@@ -1121,7 +1134,27 @@ async function findNearbyHospitals() {
   });
 }
 
-function preFillBooking(hName) {
+async function updateBookingOptions() {
+  const hName = document.getElementById('b-hospital').value;
+  const docSelect = document.getElementById('b-doctor');
+  const deptSelect = document.getElementById('b-dept');
+  const timeSelect = document.getElementById('b-time');
+
+  try {
+    const res = await fetch(`${API}/get-hospitals`);
+    const hospitals = await res.json();
+    const h = hospitals.find(h => h.name === hName);
+    if (h) {
+      docSelect.innerHTML = h.doctors.map(d => `<option value="${d}">${d}</option>`).join('');
+      deptSelect.innerHTML = h.departments.map(d => `<option value="${d}">${d}</option>`).join('');
+      timeSelect.innerHTML = h.availableSlots.map(s => `<option value="${s}">${s}</option>`).join('');
+    }
+  } catch (e) {
+    console.error("Failed to update booking options", e);
+  }
+}
+
+async function preFillBooking(hName) {
   const select = document.getElementById('b-hospital');
   let exists = false;
   for (let i = 0; i < select.options.length; i++) {
@@ -1138,6 +1171,7 @@ function preFillBooking(hName) {
     select.add(opt);
     select.value = hName;
   }
+  await updateBookingOptions();
   gotoScreen(2);
 }
 
