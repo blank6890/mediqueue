@@ -504,7 +504,7 @@ footer { padding: 4rem 2.5rem; text-align: center; border-top: 1px solid var(--b
                 <div class="live-num">3</div>
                 <div class="live-sub">in queue</div>
                 <div class="progress"><div class="progress-bar" style="width:75%"></div></div>
-                <div class="live-eta">Approx. 18 min wait</div>
+                <div class="live-eta">You are #3 in queue — Approx. 18 min wait</div>
               </div>
               <div class="detail-row"><span class="lbl">Slot time</span><span class="val">10:30 AM</span></div>
               <div class="detail-row"><span class="lbl">Total in queue</span><span class="val">8 patients</span></div>
@@ -664,12 +664,21 @@ footer { padding: 4rem 2.5rem; text-align: center; border-top: 1px solid var(--b
                 </select>
               </div>
               <div class="field"><label>Department</label>
-                <select id="b-dept"><option>General OPD</option><option>Cardiology</option><option>Neurology</option><option>Orthopaedics</option></select>
+                <select id="b-dept">
+                  <option>General OPD</option><option>Cardiology</option><option>Orthopaedics</option><option>Dermatology</option>
+                  <option>Neurology</option><option>Paediatrics</option><option>ENT</option><option>Gynaecology</option>
+                  <option>Ophthalmology</option><option>Oncology</option><option>Urology</option><option>Physiotherapy</option>
+                  <option>Psychiatry</option><option>Endocrinology</option><option>Neonatology</option><option>Paediatric Surgery</option>
+                  <option>Nephrology</option><option>Transplant</option><option>Gastroenterology</option>
+                </select>
               </div>
               <div class="field"><label>Time Slot</label>
                 <select id="b-time">
                   <option>09:00 AM</option><option>09:30 AM</option><option>10:00 AM</option>
                   <option>10:30 AM</option><option>11:00 AM</option><option>11:30 AM</option>
+                  <option>02:00 PM</option><option>02:30 PM</option><option>03:00 PM</option>
+                  <option>03:30 PM</option><option>04:00 PM</option><option>04:30 PM</option>
+                  <option>05:00 PM</option>
                 </select>
               </div>
               <div id="book-msg"></div>
@@ -699,15 +708,11 @@ footer { padding: 4rem 2.5rem; text-align: center; border-top: 1px solid var(--b
                 <div class="field"><label>Dept</label>
                   <select id="disc-dept" onchange="findNearbyHospitals()">
                     <option value="">All</option>
-                    <option>General OPD</option>
-                    <option>Cardiology</option>
-                    <option>Orthopaedics</option>
-                    <option>Dermatology</option>
-                    <option>Neurology</option>
-                    <option>Paediatrics</option>
-                    <option>Gynaecology</option>
-                    <option>Oncology</option>
-                    <option>Nephrology</option>
+                    <option>General OPD</option><option>Cardiology</option><option>Orthopaedics</option><option>Dermatology</option>
+                    <option>Neurology</option><option>Paediatrics</option><option>ENT</option><option>Gynaecology</option>
+                    <option>Ophthalmology</option><option>Oncology</option><option>Urology</option><option>Physiotherapy</option>
+                    <option>Psychiatry</option><option>Endocrinology</option><option>Neonatology</option><option>Paediatric Surgery</option>
+                    <option>Nephrology</option><option>Transplant</option><option>Gastroenterology</option>
                   </select>
                 </div>
                 <div class="field"><label>Time</label>

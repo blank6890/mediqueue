@@ -33,6 +33,9 @@ def patient_signup():
     if not all([name, age, blood_group, phone, email, password]):
         return jsonify({"error": "Missing required fields"}), 400
 
+    if not all(isinstance(x, str) for x in [name, blood_group, conditions, phone, email, password]):
+        return jsonify({"error": "Invalid input type"}), 400
+
     db = get_db()
     if db.users.find_one({"$or": [{"phone": phone}, {"email": email}]}):
         return jsonify({"error": "User already exists"}), 400
@@ -73,6 +76,9 @@ def patient_login():
     if not user_id_input or not password:
         return jsonify({"error": "Missing credentials"}), 400
 
+    if not isinstance(user_id_input, str) or not isinstance(password, str):
+        return jsonify({"error": "Invalid input type"}), 400
+
     db = get_db()
     user = db.users.find_one({
         "$and": [
@@ -99,6 +105,9 @@ def hospital_login():
 
     if not all([hospital_name, doctor_id, hospital_code, password]):
         return jsonify({"error": "Missing credentials"}), 400
+
+    if not all(isinstance(x, str) for x in [hospital_name, doctor_id, hospital_code, password]):
+        return jsonify({"error": "Invalid input type"}), 400
 
     # For prototype, we'll allow any login but store it if it's new
     db = get_db()
