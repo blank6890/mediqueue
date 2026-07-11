@@ -457,7 +457,20 @@ nav {
 }
 .badge-demo.notified { background: var(--teal-3); color: var(--teal); }
 .badge-demo.pending { background: var(--amber-light); color: var(--amber); }
-.badge-demo.standby { background: #ECEFF1; color: #546E7A; }
+.badge-demo.standby { background: #EEEEEE; color: #757575; }
+
+.cascade-item {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 12px;
+  margin-bottom: 8px;
+  transition: all 0.2s;
+}
+.cascade-item:hover {
+  border-color: var(--teal-4);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
 
 /* ── FOOTER ── */
 footer { padding: 4rem 2.5rem; text-align: center; border-top: 1px solid var(--border); }
@@ -917,7 +930,10 @@ function switchView(v) {
     history.pushState({view: v}, '', path);
   }
 
-  if (v === 'hospital') loadQueue();
+  if (v === 'hospital') {
+    loadProfile();
+    loadQueue();
+  }
   if (v === 'patient') {
     loadProfile();
     buildTrack();
@@ -1280,8 +1296,8 @@ async function triggerCascade() {
   ];
 
   div.innerHTML = demoResults.map((p,i) => `
-    <div class="cascade-item" style="flex-direction:column; align-items:flex-start; gap:6px; padding:12px 0;">
-      <div style="display:flex; align-items:center; justify-content:space-between; width:100%">
+    <div class="cascade-item">
+      <div style="display:flex; align-items:center; justify-content:space-between; width:100%; margin-bottom:6px;">
         <div style="display:flex;align-items:center;gap:8px">
           <div class="cascade-rank">${i+1}</div>
           <span style="font-weight:700">${p.name}</span>

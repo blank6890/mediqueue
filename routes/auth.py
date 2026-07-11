@@ -30,6 +30,9 @@ def patient_signup():
     email = body.get('email')
     password = body.get('password')
 
+    if not all(isinstance(x, str) for x in [name, blood_group, conditions, phone, email, password]) or not isinstance(age, (int, str)):
+        return jsonify({"error": "Invalid input types"}), 400
+
     if not all([name, age, blood_group, phone, email, password]):
         return jsonify({"error": "Missing required fields"}), 400
 
@@ -70,6 +73,9 @@ def patient_login():
     user_id_input = body.get('user_id') # email or phone
     password = body.get('password')
 
+    if not isinstance(user_id_input, str) or not isinstance(password, str):
+        return jsonify({"error": "Invalid input types"}), 400
+
     if not user_id_input or not password:
         return jsonify({"error": "Missing credentials"}), 400
 
@@ -96,6 +102,9 @@ def hospital_login():
     doctor_id = body.get('doctor_id') # or email
     hospital_code = body.get('hospital_code')
     password = body.get('password')
+
+    if not all(isinstance(x, str) for x in [hospital_name, doctor_id, hospital_code, password]):
+        return jsonify({"error": "Invalid input types"}), 400
 
     if not all([hospital_name, doctor_id, hospital_code, password]):
         return jsonify({"error": "Missing credentials"}), 400
