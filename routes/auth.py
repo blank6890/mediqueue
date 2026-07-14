@@ -30,7 +30,7 @@ def patient_signup():
     email = body.get('email')
     password = body.get('password')
 
-    if not all([name, age, blood_group, phone, email, password]):
+    if not all(isinstance(x, str) for x in [name, blood_group, phone, email, password]) or not age:
         return jsonify({"error": "Missing required fields"}), 400
 
     db = get_db()
@@ -70,7 +70,7 @@ def patient_login():
     user_id_input = body.get('user_id') # email or phone
     password = body.get('password')
 
-    if not user_id_input or not password:
+    if not isinstance(user_id_input, str) or not isinstance(password, str):
         return jsonify({"error": "Missing credentials"}), 400
 
     db = get_db()
@@ -97,7 +97,7 @@ def hospital_login():
     hospital_code = body.get('hospital_code')
     password = body.get('password')
 
-    if not all([hospital_name, doctor_id, hospital_code, password]):
+    if not all(isinstance(x, str) for x in [hospital_name, doctor_id, hospital_code, password]):
         return jsonify({"error": "Missing credentials"}), 400
 
     # For prototype, we'll allow any login but store it if it's new
