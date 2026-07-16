@@ -329,7 +329,7 @@ nav {
   font-size: 0.7rem; font-weight: 700; text-align: center;
   text-transform: uppercase; letter-spacing: 0.4px;
 }
-.status-pill.booked { background: var(--teal-3); color: var(--teal); }
+.status-pill.booked { background: var(--teal-3); color: var(--teal); border: 1px solid var(--teal-4); }
 .status-pill.present { background: var(--success-light); color: var(--success); }
 .status-pill.missed { background: var(--danger-light); color: var(--danger); }
 
@@ -580,7 +580,9 @@ footer { padding: 4rem 2.5rem; text-align: center; border-top: 1px solid var(--b
           <select id="ps-blood"><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>O+</option><option>O-</option><option>AB+</option><option>AB-</option></select>
         </div>
       </div>
-      <div class="field"><label>Chronic Conditions</label><input type="text" id="ps-cond" placeholder="None, Diabetes, etc."/></div>
+      <div class="field"><label>Chronic Conditions</label>
+        <textarea id="ps-cond" placeholder="None, Diabetes, etc." style="width: 100%; padding: 9px 12px; border: 1.5px solid var(--border); border-radius: var(--r); font-size: 0.84rem; font-family: 'Instrument Sans', sans-serif; background: var(--white); color: var(--ink); height: 80px; resize: none;"></textarea>
+      </div>
       <div class="field"><label>Phone Number</label><input type="text" id="ps-phone" placeholder="10-digit number"/></div>
       <div class="field"><label>Email</label><input type="email" id="ps-email" placeholder="john@example.com"/></div>
       <div class="field"><label>Password</label><input type="password" id="ps-pass" placeholder="••••••••"/></div>
@@ -917,7 +919,10 @@ function switchView(v) {
     history.pushState({view: v}, '', path);
   }
 
-  if (v === 'hospital') loadQueue();
+  if (v === 'hospital') {
+    loadQueue();
+    loadProfile();
+  }
   if (v === 'patient') {
     loadProfile();
     buildTrack();
