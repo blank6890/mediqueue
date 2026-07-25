@@ -554,7 +554,7 @@ footer { padding: 4rem 2.5rem; text-align: center; border-top: 1px solid var(--b
       </div>
       <div class="field"><label>Email or Phone</label><input type="text" id="pl-user" placeholder="Enter email or phone"/></div>
       <div class="field"><label>Password</label><input type="password" id="pl-pass" placeholder="••••••••"/></div>
-      <button class="cta" onclick="handleAuth('patient', 'login')">Login to MediQueue</button>
+      <button class="cta" onclick="handleAuth('patient', 'login', this)">Login to MediQueue</button>
       <p style="text-align:center; font-size:0.85rem; margin-top:1.5rem; color:var(--muted)">
         New to MediQueue? <a href="javascript:void(0)" onclick="switchView('patient-signup')" style="color:var(--teal); font-weight:600; text-decoration:none">Create account</a>
       </p>
@@ -586,7 +586,7 @@ footer { padding: 4rem 2.5rem; text-align: center; border-top: 1px solid var(--b
       <div class="field"><label>Phone Number</label><input type="text" id="ps-phone" placeholder="10-digit number"/></div>
       <div class="field"><label>Email</label><input type="email" id="ps-email" placeholder="john@example.com"/></div>
       <div class="field"><label>Password</label><input type="password" id="ps-pass" placeholder="••••••••"/></div>
-      <button class="cta" onclick="handleAuth('patient', 'signup')">Create Account</button>
+      <button class="cta" onclick="handleAuth('patient', 'signup', this)">Create Account</button>
     </div>
   </div>
 </div>
@@ -606,7 +606,7 @@ footer { padding: 4rem 2.5rem; text-align: center; border-top: 1px solid var(--b
       <div class="field"><label>Doctor ID or Email</label><input type="text" id="hl-user" placeholder="DR-123 or email"/></div>
       <div class="field"><label>Hospital Code</label><input type="text" id="hl-code" placeholder="HOSP-001"/></div>
       <div class="field"><label>Password</label><input type="password" id="hl-pass" placeholder="••••••••"/></div>
-      <button class="cta" onclick="handleAuth('hospital', 'login')">Login to Portal</button>
+      <button class="cta" onclick="handleAuth('hospital', 'login', this)">Login to Portal</button>
     </div>
   </div>
 </div>
@@ -649,7 +649,7 @@ footer { padding: 4rem 2.5rem; text-align: center; border-top: 1px solid var(--b
               <button class="cta" onclick="gotoScreen(5)" style="background:var(--white); color:var(--teal); border:1.5px solid var(--teal); margin-bottom:1rem">Find Hospitals Near Me 📍</button>
               <div class="screen-title">Select your appointment</div>
               <div class="field"><label>Hospital</label>
-                <select id="b-hospital">
+                <select id="b-hospital" onchange="loadHospitalsForBooking()">
                   <option>Apollo Clinic — Jubilee Hills</option>
                   <option>Yashoda Hospital — Secunderabad</option>
                   <option>NIMS Polyclinic — Punjagutta</option>
@@ -966,10 +966,12 @@ function checkAuth() {
   }
 }
 
-async function handleAuth(role, type) {
-  const btn = event.target;
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spin"></span> Loading...';
+async function handleAuth(role, type, btnElement) {
+  const btn = btnElement || (typeof event !== 'undefined' ? event.target : null) || document.activeElement;
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spin"></span> Loading...';
+  }
 
   let url = type === 'signup' ? `${API}/patient/signup` : role === 'patient' ? `${API}/patient/login` : `${API}/hospital/login`;
   let body = {};
@@ -1017,8 +1019,10 @@ async function handleAuth(role, type) {
   } catch (e) {
     alert('Server unreachable');
   }
-  btn.disabled = false;
-  btn.innerHTML = type === 'signup' ? 'Create Account' : role === 'patient' ? 'Login to MediQueue' : 'Login to Portal';
+  if (btn) {
+    btn.disabled = false;
+    btn.innerHTML = type === 'signup' ? 'Create Account' : role === 'patient' ? 'Login to MediQueue' : 'Login to Portal';
+  }
 }
 
 function logout() {
@@ -1026,9 +1030,49 @@ function logout() {
   switchView('landing');
 }
 
+let allHospitals = [];
+
+async function loadHospitalsForBooking() {
+  if (allHospitals.length === 0) {
+    try {
+      const res = await fetch(`${API}/get-hospitals`);
+      allHospitals = await res.json();
+    } catch (e) {
+      console.error("Failed to load hospitals", e);
+      return;
+    }
+  }
+
+  const hSelect = document.getElementById('b-hospital');
+  if (!hSelect) return;
+  const selectedName = hSelect.value;
+  const hospital = allHospitals.find(h => h.name === selectedName);
+
+  if (hospital) {
+    // Populate doctors
+    const docSelect = document.getElementById('b-doctor');
+    if (docSelect) {
+      docSelect.innerHTML = hospital.doctors.map(d => `<option value="${d}">${d}</option>`).join('');
+    }
+
+    // Populate departments
+    const deptSelect = document.getElementById('b-dept');
+    if (deptSelect) {
+      deptSelect.innerHTML = hospital.departments.map(d => `<option value="${d}">${d}</option>`).join('');
+    }
+
+    // Populate slots
+    const slotSelect = document.getElementById('b-time');
+    if (slotSelect) {
+      slotSelect.innerHTML = hospital.availableSlots.map(s => `<option value="${s}">${s}</option>`).join('');
+    }
+  }
+}
+
 function loadProfile() {
   const user = JSON.parse(localStorage.getItem('mediqueue_user'));
   if (user && user.role === 'patient') {
+    loadHospitalsForBooking();
     fetch(`${API}/get-patient/${user.id}`)
       .then(r => r.json())
       .then(p => {
@@ -1143,6 +1187,7 @@ function preFillBooking(hName) {
     select.add(opt);
     select.value = hName;
   }
+  loadHospitalsForBooking();
   gotoScreen(2);
 }
 
@@ -1299,7 +1344,17 @@ async function triggerCascade() {
       </div>
     </div>`).join('');
 
-  updateStatus('missed');
+  // Call the update-status API asynchronously to update database
+  try {
+    await fetch(`${API}/update-status`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({booking_id: id, status: 'missed'})
+    });
+    loadQueue();
+  } catch (e) {
+    console.error(e);
+  }
 }
 
 checkAuth();
