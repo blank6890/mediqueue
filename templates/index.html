@@ -554,7 +554,7 @@ footer { padding: 4rem 2.5rem; text-align: center; border-top: 1px solid var(--b
       </div>
       <div class="field"><label>Email or Phone</label><input type="text" id="pl-user" placeholder="Enter email or phone"/></div>
       <div class="field"><label>Password</label><input type="password" id="pl-pass" placeholder="••••••••"/></div>
-      <button class="cta" onclick="handleAuth('patient', 'login')">Login to MediQueue</button>
+      <button class="cta" onclick="handleAuth(this, 'patient', 'login')">Login to MediQueue</button>
       <p style="text-align:center; font-size:0.85rem; margin-top:1.5rem; color:var(--muted)">
         New to MediQueue? <a href="javascript:void(0)" onclick="switchView('patient-signup')" style="color:var(--teal); font-weight:600; text-decoration:none">Create account</a>
       </p>
@@ -586,7 +586,7 @@ footer { padding: 4rem 2.5rem; text-align: center; border-top: 1px solid var(--b
       <div class="field"><label>Phone Number</label><input type="text" id="ps-phone" placeholder="10-digit number"/></div>
       <div class="field"><label>Email</label><input type="email" id="ps-email" placeholder="john@example.com"/></div>
       <div class="field"><label>Password</label><input type="password" id="ps-pass" placeholder="••••••••"/></div>
-      <button class="cta" onclick="handleAuth('patient', 'signup')">Create Account</button>
+      <button class="cta" onclick="handleAuth(this, 'patient', 'signup')">Create Account</button>
     </div>
   </div>
 </div>
@@ -606,7 +606,7 @@ footer { padding: 4rem 2.5rem; text-align: center; border-top: 1px solid var(--b
       <div class="field"><label>Doctor ID or Email</label><input type="text" id="hl-user" placeholder="DR-123 or email"/></div>
       <div class="field"><label>Hospital Code</label><input type="text" id="hl-code" placeholder="HOSP-001"/></div>
       <div class="field"><label>Password</label><input type="password" id="hl-pass" placeholder="••••••••"/></div>
-      <button class="cta" onclick="handleAuth('hospital', 'login')">Login to Portal</button>
+      <button class="cta" onclick="handleAuth(this, 'hospital', 'login')">Login to Portal</button>
     </div>
   </div>
 </div>
@@ -649,29 +649,23 @@ footer { padding: 4rem 2.5rem; text-align: center; border-top: 1px solid var(--b
               <button class="cta" onclick="gotoScreen(5)" style="background:var(--white); color:var(--teal); border:1.5px solid var(--teal); margin-bottom:1rem">Find Hospitals Near Me 📍</button>
               <div class="screen-title">Select your appointment</div>
               <div class="field"><label>Hospital</label>
-                <select id="b-hospital">
-                  <option>Apollo Clinic — Jubilee Hills</option>
-                  <option>Yashoda Hospital — Secunderabad</option>
-                  <option>NIMS Polyclinic — Punjagutta</option>
-                  <option>Care Hospital — Banjara Hills</option>
-                  <option>Sunshine Hospital — Gachibowli</option>
-                  <option>Medicover Hospital — HITEC City</option>
-                  <option>Rainbow Children's Hospital — Banjara Hills</option>
-                  <option>Gleneagles Global Hospital — LB Nagar</option>
+                <select id="b-hospital" onchange="onHospitalChange()">
+                  <!-- Dynamically populated -->
                 </select>
               </div>
               <div class="field"><label>Doctor</label>
                 <select id="b-doctor">
-                  <option>Dr. Ramesh Kumar</option><option>Dr. Suresh Reddy</option><option>Dr. Kavitha Rao</option>
+                  <!-- Dynamically populated -->
                 </select>
               </div>
               <div class="field"><label>Department</label>
-                <select id="b-dept"><option>General OPD</option><option>Cardiology</option><option>Neurology</option><option>Orthopaedics</option></select>
+                <select id="b-dept">
+                  <!-- Dynamically populated -->
+                </select>
               </div>
               <div class="field"><label>Time Slot</label>
                 <select id="b-time">
-                  <option>09:00 AM</option><option>09:30 AM</option><option>10:00 AM</option>
-                  <option>10:30 AM</option><option>11:00 AM</option><option>11:30 AM</option>
+                  <!-- Dynamically populated -->
                 </select>
               </div>
               <div id="book-msg"></div>
@@ -966,8 +960,7 @@ function checkAuth() {
   }
 }
 
-async function handleAuth(role, type) {
-  const btn = event.target;
+async function handleAuth(btn, role, type) {
   btn.disabled = true;
   btn.innerHTML = '<span class="spin"></span> Loading...';
 
@@ -1126,6 +1119,72 @@ async function findNearbyHospitals() {
   });
 }
 
+let hospitalsData = [];
+
+async function loadHospitals() {
+  try {
+    const res = await fetch(`${API}/get-hospitals`);
+    hospitalsData = await res.json();
+    populateHospitalDropdown();
+  } catch (e) {
+    console.error("Failed to load hospitals:", e);
+  }
+}
+
+function populateHospitalDropdown() {
+  const select = document.getElementById('b-hospital');
+  if (!select) return;
+  select.innerHTML = '';
+  hospitalsData.forEach(h => {
+    const opt = document.createElement('option');
+    opt.value = h.name;
+    opt.textContent = h.name;
+    select.appendChild(opt);
+  });
+  onHospitalChange();
+}
+
+function onHospitalChange() {
+  const select = document.getElementById('b-hospital');
+  if (!select) return;
+  const selectedName = select.value;
+  const hospital = hospitalsData.find(h => h.name === selectedName);
+
+  const bDoctor = document.getElementById('b-doctor');
+  const bDept = document.getElementById('b-dept');
+  const bTime = document.getElementById('b-time');
+
+  if (hospital) {
+    if (bDoctor) {
+      bDoctor.innerHTML = '';
+      hospital.doctors.forEach(d => {
+        const opt = document.createElement('option');
+        opt.value = d;
+        opt.textContent = d;
+        bDoctor.appendChild(opt);
+      });
+    }
+    if (bDept) {
+      bDept.innerHTML = '';
+      hospital.departments.forEach(d => {
+        const opt = document.createElement('option');
+        opt.value = d;
+        opt.textContent = d;
+        bDept.appendChild(opt);
+      });
+    }
+    if (bTime) {
+      bTime.innerHTML = '';
+      hospital.availableSlots.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s;
+        opt.textContent = s;
+        bTime.appendChild(opt);
+      });
+    }
+  }
+}
+
 function preFillBooking(hName) {
   const select = document.getElementById('b-hospital');
   let exists = false;
@@ -1143,6 +1202,7 @@ function preFillBooking(hName) {
     select.add(opt);
     select.value = hName;
   }
+  onHospitalChange();
   gotoScreen(2);
 }
 
@@ -1231,10 +1291,16 @@ async function loadQueue() {
     const res = await fetch(`${API}/get-queue`);
     const data = await res.json();
     const q = data.queue;
+
+    // Use case-insensitive matching for status filters
+    const bookedCount = q.filter(b => b.status && b.status.toLowerCase() === 'booked').length;
+    const presentCount = q.filter(b => b.status && b.status.toLowerCase() === 'present').length;
+    const missedCount = q.filter(b => b.status && b.status.toLowerCase() === 'missed').length;
+
     document.getElementById('kpi-total').textContent = data.total_in_queue;
-    document.getElementById('kpi-booked').textContent = q.filter(b=>b.status==='booked').length;
-    document.getElementById('kpi-present').textContent = q.filter(b=>b.status==='present').length;
-    document.getElementById('kpi-missed').textContent = q.filter(b=>b.status==='missed').length;
+    document.getElementById('kpi-booked').textContent = bookedCount;
+    document.getElementById('kpi-present').textContent = presentCount;
+    document.getElementById('kpi-missed').textContent = missedCount;
 
     const list = document.getElementById('queue-list');
     if (!q.length) {
@@ -1242,13 +1308,14 @@ async function loadQueue() {
       return;
     }
     list.innerHTML = q.map(b => {
-      const cls = b.status==='present'?'is-present':b.status==='missed'?'is-missed':'';
+      const statusLower = b.status ? b.status.toLowerCase() : '';
+      const cls = statusLower==='present'?'is-present':statusLower==='missed'?'is-missed':'';
       const initials = b.patient_name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
       return `<div class="q-row ${cls}">
         <div class="q-avatar">${initials}</div>
         <div><div class="q-name">${b.patient_name}</div><div class="q-id">${b.booking_id}</div></div>
         <div class="q-time">${b.slot_time}</div>
-        <div class="status-pill ${b.status}">${b.status}</div>
+        <div class="status-pill ${statusLower}">${b.status}</div>
       </div>`;
     }).join('');
   } catch(e) {}
@@ -1299,10 +1366,18 @@ async function triggerCascade() {
       </div>
     </div>`).join('');
 
-  updateStatus('missed');
+  try {
+    await fetch(`${API}/update-status`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({booking_id: id, status: 'missed'})
+    });
+    loadQueue();
+  } catch(e) {}
 }
 
 checkAuth();
+loadHospitals();
 </script>
 </body>
 </html>
