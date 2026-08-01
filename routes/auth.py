@@ -21,7 +21,7 @@ def generate_otp():
 
 @auth_bp.route('/patient/signup', methods=['POST'])
 def patient_signup():
-    body = request.get_json()
+    body = request.get_json() or {}
     name = body.get('name')
     age = body.get('age')
     blood_group = body.get('blood_group')
@@ -32,6 +32,12 @@ def patient_signup():
 
     if not all([name, age, blood_group, phone, email, password]):
         return jsonify({"error": "Missing required fields"}), 400
+
+    if not isinstance(name, str) or not isinstance(blood_group, str) or not isinstance(phone, str) or not isinstance(email, str) or not isinstance(password, str) or not isinstance(conditions, str):
+        return jsonify({"error": "Invalid input type"}), 400
+
+    if not (isinstance(age, str) or isinstance(age, int)):
+        return jsonify({"error": "Age must be a string or integer"}), 400
 
     db = get_db()
     if db.users.find_one({"$or": [{"phone": phone}, {"email": email}]}):
