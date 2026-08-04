@@ -33,6 +33,13 @@ def patient_signup():
     if not all([name, age, blood_group, phone, email, password]):
         return jsonify({"error": "Missing required fields"}), 400
 
+    if not isinstance(age, (str, int)):
+        return jsonify({"error": "Invalid input type for age"}), 400
+
+    for f, f_name in [(name, 'name'), (blood_group, 'blood_group'), (conditions, 'conditions'), (phone, 'phone'), (email, 'email'), (password, 'password')]:
+        if not isinstance(f, str):
+            return jsonify({"error": f"Invalid input type for {f_name}"}), 400
+
     db = get_db()
     if db.users.find_one({"$or": [{"phone": phone}, {"email": email}]}):
         return jsonify({"error": "User already exists"}), 400
