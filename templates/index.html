@@ -504,7 +504,7 @@ footer { padding: 4rem 2.5rem; text-align: center; border-top: 1px solid var(--b
                 <div class="live-num">3</div>
                 <div class="live-sub">in queue</div>
                 <div class="progress"><div class="progress-bar" style="width:75%"></div></div>
-                <div class="live-eta">Approx. 18 min wait</div>
+                <div class="live-eta">You are #3 in queue — estimated wait: 18 mins</div>
               </div>
               <div class="detail-row"><span class="lbl">Slot time</span><span class="val">10:30 AM</span></div>
               <div class="detail-row"><span class="lbl">Total in queue</span><span class="val">8 patients</span></div>
@@ -646,7 +646,7 @@ footer { padding: 4rem 2.5rem; text-align: center; border-top: 1px solid var(--b
           <div class="screen" id="screen-2">
             <div class="screen-top"><h2>Book a Slot</h2><p>Pick hospital & time</p></div>
             <div class="screen-body">
-              <button class="cta" onclick="gotoScreen(5)" style="background:var(--white); color:var(--teal); border:1.5px solid var(--teal); margin-bottom:1rem">Find Hospitals Near Me 📍</button>
+              <button class="cta" onclick="clickFindHospitals()" style="background:var(--white); color:var(--teal); border:1.5px solid var(--teal); margin-bottom:1rem">Find Hospitals Near Me 📍</button>
               <div class="screen-title">Select your appointment</div>
               <div class="field"><label>Hospital</label>
                 <select id="b-hospital" onchange="onHospitalChange()">
@@ -726,11 +726,11 @@ footer { padding: 4rem 2.5rem; text-align: center; border-top: 1px solid var(--b
                 <div class="live-num" id="live-pos">3</div>
                 <div class="live-sub">in queue</div>
                 <div class="progress"><div class="progress-bar" id="live-bar" style="width:75%"></div></div>
-                <div class="live-eta" id="live-eta">Approx. 18 min wait</div>
+                <div class="live-eta" id="live-eta">You are #3 in queue — estimated wait: 18 mins</div>
               </div>
               <div class="detail-row"><span class="lbl">Slot time</span><span class="val" id="live-slot">10:30 AM</span></div>
               <div class="detail-row"><span class="lbl">Total in queue</span><span class="val" id="live-total">8 patients</span></div>
-              <button class="cta" onclick="gotoScreen(5)" style="background:var(--white); color:var(--teal); border:1.5px solid var(--teal); margin: 10px 0;">Find Hospitals Near Me 📍</button>
+              <button class="cta" onclick="clickFindHospitals()" style="background:var(--white); color:var(--teal); border:1.5px solid var(--teal); margin: 10px 0;">Find Hospitals Near Me 📍</button>
               <div class="alert-card warn" style="margin-top:8px">
                 <strong>GPS alert ready</strong>
                 We'll notify you when it's time to head over — no need to wait at hospital
@@ -1206,6 +1206,11 @@ function preFillBooking(hName) {
   gotoScreen(2);
 }
 
+function clickFindHospitals() {
+  gotoScreen(5);
+  findNearbyHospitals();
+}
+
 function tryDemo() {
   const demoUser = {
     role: 'patient',
@@ -1219,7 +1224,7 @@ function tryDemo() {
   // Pre-fill tracking for demo
   document.getElementById('live-pos').textContent = '3';
   document.getElementById('live-bar').style.width = '75%';
-  document.getElementById('live-eta').textContent = 'Approx. 18 min wait';
+  document.getElementById('live-eta').textContent = 'You are #3 in queue — estimated wait: 18 mins';
   document.getElementById('live-slot').textContent = '10:30 AM';
   document.getElementById('live-total').textContent = '8 patients';
 
@@ -1346,9 +1351,9 @@ async function triggerCascade() {
   showMsg('action-msg','success','Cascade triggered!');
   const div = document.getElementById('cascade-result');
   const demoResults = [
-    { name: "Ravi Kumar", bookingId: "MQ-2847", distance: "0.4 km", status: "notified", eta: "~5 min" },
-    { name: "Sunita Devi", bookingId: "MQ-1193", distance: "1.1 km", status: "pending", eta: "~12 min" },
-    { name: "Arjun Reddy", bookingId: "MQ-3305", distance: "2.3 km", status: "standby", eta: "~20 min" }
+    { name: "Ravi Kumar", bookingId: "MQ-2847", distance: "0.4 km", status: "Notified", eta: "~5 min" },
+    { name: "Sunita Devi", bookingId: "MQ-1193", distance: "1.1 km", status: "Pending", eta: "~12 min" },
+    { name: "Arjun Reddy", bookingId: "MQ-3305", distance: "2.3 km", status: "Standby", eta: "~20 min" }
   ];
 
   div.innerHTML = demoResults.map((p,i) => `
@@ -1358,7 +1363,7 @@ async function triggerCascade() {
           <div class="cascade-rank">${i+1}</div>
           <span style="font-weight:700">${p.name}</span>
         </div>
-        <span class="badge-demo ${p.status}">${p.status.charAt(0).toUpperCase() + p.status.slice(1)}</span>
+        <span class="badge-demo ${p.status.toLowerCase()}">${p.status}</span>
       </div>
       <div style="display:flex; justify-content:space-between; width:100%; font-size:0.75rem; color:var(--muted)">
         <span>ID: ${p.bookingId} • ${p.distance}</span>
