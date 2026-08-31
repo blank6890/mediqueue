@@ -33,6 +33,14 @@ def patient_signup():
     if not all([name, age, blood_group, phone, email, password]):
         return jsonify({"error": "Missing required fields"}), 400
 
+    # Strict type checks for security
+    if not isinstance(name, str) or not isinstance(blood_group, str) or \
+       not isinstance(phone, str) or not isinstance(email, str) or not isinstance(password, str):
+        return jsonify({"error": "Invalid field types"}), 400
+
+    if not isinstance(age, (int, str)):
+        return jsonify({"error": "Age must be a number or string"}), 400
+
     db = get_db()
     if db.users.find_one({"$or": [{"phone": phone}, {"email": email}]}):
         return jsonify({"error": "User already exists"}), 400
@@ -76,6 +84,9 @@ def patient_login():
     if not user_id_input or not password:
         return jsonify({"error": "Missing credentials"}), 400
 
+    if not isinstance(user_id_input, str) or not isinstance(password, str):
+        return jsonify({"error": "Invalid credential types"}), 400
+
     db = get_db()
     user = db.users.find_one({
         "$and": [
@@ -105,6 +116,9 @@ def hospital_login():
 
     if not all([hospital_name, doctor_id, hospital_code, password]):
         return jsonify({"error": "Missing credentials"}), 400
+
+    if not all(isinstance(x, str) for x in [hospital_name, doctor_id, hospital_code, password]):
+        return jsonify({"error": "Invalid credential types"}), 400
 
     # For prototype, we'll allow any login but store it if it's new
     db = get_db()
